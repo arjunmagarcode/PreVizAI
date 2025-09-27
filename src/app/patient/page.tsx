@@ -1,41 +1,69 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useCedarStore, useVoice } from "cedar-os";
+import { useRouter, useSearchParams } from "next/navigation";
 import { VoiceIndicator } from "@/cedar/components/voice/VoiceIndicator";
-import { Mic, MicOff, Send, ArrowLeft } from "lucide-react";
+import { Mic, MicOff, Send, CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { VoicePermissionHelper } from "@/components/VoicePermissionHelper";
 
 export default function PatientIntake() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Optional: get patient id/name from query, e.g. /patient?pid=2&name=Michael%20Chen
+  const patientId = searchParams.get("pid") ?? "1";
+  const patientName = searchParams.get("name") ?? "Patient";
+
   const voiceStore: any = useCedarStore((s: any) => s.voice);
   const voice = useVoice();
-  const router = useRouter();
 
-  // keep the sid available for redirect
-  const sidRef = useRef<string>("");
-
-  // Point Cedar voice at our endpoint with a fresh per-load session id
+  // Set the voice endpoint ONCE per page-load with a fresh session id (sid).
   useEffect(() => {
     const sid =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? (crypto as any).randomUUID()
         : Math.random().toString(36).slice(2);
-
-    sidRef.current = sid;
     voiceStore?.setVoiceEndpoint?.(`/api/voice?sid=${sid}`);
     return () => voiceStore?.resetVoiceState?.();
   }, [voiceStore]);
 
-  // Cedar messages (can be s.messages.items or s.messages depending on version)
+  // Cedar messages (can be s.messages.items or s.messages)
   const rawMessages = useCedarStore((s: any) => s?.messages?.items ?? s?.messages ?? []);
   const messages: any[] = useMemo(() => (Array.isArray(rawMessages) ? rawMessages : []), [rawMessages]);
 
-  // ✅ Button is clickable once there's any message
+  // const conversation = (Array.isArray(rawMessages) ? rawMessages : []).map((m: any) => ({
+  //   role: m.role === "assistant" ? "assistant" : "user",
+  //   content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+  // }));
+
+  // Turn [{role, content}] into a single string the Flask endpoint expects
+  function buildTranscriptString(msgs: any[]) {
+    return msgs
+      .map(m => {
+        const who = m.role === "assistant" ? "AI" : "Patient";
+        const text = typeof m.content === "string" ? m.content : JSON.stringify(m.content);
+        return `${who}: ${text}`;
+      })
+      .join("\n");
+  }
+
+
+  // ✅ Button becomes clickable as soon as ANY message exists
   const canComplete = messages.length > 0;
 
+  const [isCompleted, setIsCompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // After showing the success screen, redirect to the doctor dashboard
+  useEffect(() => {
+    if (!isCompleted) return;
+    const timer = setTimeout(() => {
+      router.push(`/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}`);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [isCompleted, router, patientId]);
 
   const handleRequestPermission = async () => {
     try {
@@ -62,24 +90,57 @@ export default function PatientIntake() {
     }
   };
 
+  async function sendTranscriptToFlask(transcript: string) {
+    const url = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000") + "/generate_report";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Flask expects: { "transcript": "<string>" }
+      body: JSON.stringify({ transcript }),
+    });
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "");
+      throw new Error(`Backend error ${res.status}: ${msg}`);
+    }
+    return res.json(); // { message, insights_report, next_steps, graph }
+  }
+
+  // In your Complete Intake handler:
   const handleCompleteIntake = async () => {
-    if (!canComplete) return;
+    if (messages.length === 0) return;   // keep your “first turn disabled” rule
     setIsSubmitting(true);
     try {
-      // Save minimal intake info for the doctor view (you can add patientId later)
-      const latestIntake = {
-        sid: sidRef.current,
-        patientName: "Demo Patient", // change if you capture name
-        completedAt: new Date().toISOString(),
-      };
-      sessionStorage.setItem("latestIntake", JSON.stringify(latestIntake));
+      const transcript = buildTranscriptString(messages);
+      const data = await sendTranscriptToFlask(transcript);
 
-      // Redirect to doctor's dashboard
-      router.push("/doctor");
+      // For now, just see it working:
+      console.log("Report from Flask:", data);
+
+      // Optional: stash it for the doctor page to read
+      // localStorage.setItem("latestReport", JSON.stringify(data));
+      // router.push(`/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}`);
+
+      setIsCompleted(true);
+    } catch (e: any) {
+      alert(e?.message || "Failed to send transcript");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+
+  if (isCompleted) {
+    // Quick success page while redirecting (kept for UX polish; router.push happens above)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake Complete!</h1>
+          <p className="text-gray-600">Redirecting to the doctor dashboard…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -114,7 +175,7 @@ export default function PatientIntake() {
               <li>Click the microphone button to start</li>
               <li>Speak your main health concern</li>
               <li>Answer the AI’s follow-up questions</li>
-              <li>Complete when ready</li>
+              <li>Click Complete any time you’re ready</li>
             </ol>
             <VoicePermissionHelper
               permissionStatus={voice?.voicePermissionStatus || "prompt"}
@@ -141,8 +202,8 @@ export default function PatientIntake() {
                   <div key={idx} className={`flex ${m.role === "assistant" ? "justify-start" : "justify-end"}`}>
                     <div
                       className={`max-w-[80%] p-4 rounded-lg ${m.role === "assistant"
-                          ? "bg-blue-100 text-blue-900 rounded-bl-none"
-                          : "bg-green-100 text-green-900 rounded-br-none"
+                        ? "bg-blue-100 text-blue-900 rounded-bl-none"
+                        : "bg-green-100 text-green-900 rounded-br-none"
                         }`}
                     >
                       <div className="text-xs font-medium mb-1 opacity-70">
@@ -166,8 +227,8 @@ export default function PatientIntake() {
                   onClick={handleVoiceToggle}
                   disabled={!voice || voice.voicePermissionStatus === "denied"}
                   className={`flex items-center justify-center w-14 h-14 rounded-full transition-all ${voice?.isListening
-                      ? "bg-red-500 hover:bg-red-600 text-white"
-                      : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
                     }`}
                 >
                   {voice?.isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
@@ -191,8 +252,8 @@ export default function PatientIntake() {
                 onClick={handleCompleteIntake}
                 disabled={!canComplete || isSubmitting}
                 className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${canComplete && !isSubmitting
-                    ? "bg-green-500 hover:bg-green-600 text-white"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  ? "bg-green-500 hover:bg-green-600 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
                 {isSubmitting ? (
@@ -205,9 +266,7 @@ export default function PatientIntake() {
             </div>
 
             {!canComplete && (
-              <p className="text-xs text-gray-500 mt-2">
-                Start the conversation to enable completion.
-              </p>
+              <p className="text-xs text-gray-500 mt-2">Start the conversation to enable completion.</p>
             )}
             {canComplete && (
               <p className="text-xs text-green-600 mt-2">You can submit whenever you’re ready.</p>

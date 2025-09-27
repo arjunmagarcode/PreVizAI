@@ -1,6 +1,7 @@
 // app/api/voice/route.ts
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
+import { systemPrompt } from "@/utils/prompts/conversationPrompt";
 
 export const runtime = "nodejs";
 
@@ -58,8 +59,7 @@ export async function POST(req: NextRequest) {
 
     // 2) Build LLM messages from server history (last N) + current userText already included
     const recent: Msg[] = hist.slice(-10); // small window for token safety
-    const systemPrompt = `You are a medical intake assistant having a short voice conversation with a patient.
-Be concise. Ask at most one targeted follow-up at a time. If enough context exists, you may move on politely.`;
+
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
