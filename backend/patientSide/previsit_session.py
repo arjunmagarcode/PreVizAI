@@ -2,17 +2,22 @@ import os
 from dotenv import load_dotenv
 from patient_graph_utils import init_clients, generate_followup, generate_graph_nodes, clear_graph, update_graph
 
+# -----------------------------
+# LOAD ENVIRONMENT VARIABLES
+# -----------------------------
 load_dotenv()
 
 # -----------------------------
-# PATHS
+# PATHS (relative to this script)
 # -----------------------------
-LLM_PROMPTS_DIR = "patientSide_LLM_Prompts"
-QUESTION_PROMPT_PATH = f"{LLM_PROMPTS_DIR}/questionPrompting.txt"
-GRAPH_PROMPT_PATH = f"{LLM_PROMPTS_DIR}/knowledgeGraphPrompt.txt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LLM_PROMPTS_DIR = os.path.join(BASE_DIR, "patientSide_LLM_Prompts")
+QUESTION_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "questionPrompting.txt")
+GRAPH_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "knowledgeGraphPrompt.txt")
 
 with open(QUESTION_PROMPT_PATH, "r") as f:
     question_prompt = f.read()
+
 with open(GRAPH_PROMPT_PATH, "r") as f:
     graph_prompt = f.read()
 
@@ -97,6 +102,8 @@ The headaches usually start in the early morning and last for several hours. The
 "When the headaches and nausea hit, I usually try to rest in a dark, quiet room and drink water. I sometimes take ibuprofen, which helps a little, and avoid screens or bright lights. Eating a small snack can also help a bit if I’ve skipped meals. Other than that, I haven’t found anything that fully relieves the symptoms."
 
 I’ve also noticed that when I’m really stressed or haven’t slept enough, the headaches and nausea seem to come on more quickly and feel more intense."
+
+"Yes, sometimes during the headaches I notice a bit of blurry vision and it feels harder to focus my eyes. I’ve also felt slightly off-balance a couple of times, almost like a lightheaded or dizzy feeling, especially when I stand up quickly."
 
 MATCH (n)-[r]->(m)
 RETURN n, r, m

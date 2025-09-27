@@ -1,44 +1,50 @@
-# Patient Insights Report
+## Patient Overview / General Summary
 
-## 1. Patient Overview / General Summary
-Patient is a 52-year-old male with a history of Type 2 diabetes and hypertension. Presents with complaints of increasing episodes of headache and fatigue over the past two months as reported during the latest pre-visit consultation. Chronic conditions are managed with metformin and lisinopril, and there are no reported drug allergies. Recent concerns include difficulty managing blood sugar levels and new onset visual disturbances accompanying headaches.
+The patient is a 42-year-old male with a history of type 2 diabetes and hypertension. He is currently presenting with new-onset chest discomfort and intermittent palpitations, more pronounced over the past two weeks. His concerns include managing his blood sugar levels and the recent increase in palpitations, which he reported during his last pre-visit conversation. Diabetic control and cardiovascular stability should be prioritized due to the interaction with his existing chronic conditions.
 
-## 2. Symptom & Condition Summaries
-- **Headache (Symptom)**: Reports headaches of moderate intensity, worsened by bright lighting and prolonged computer use, with some relief provided by over-the-counter painkillers. Linked to recent visual disturbances and fatigue episodes. (EMR)
-- **Fatigue (Symptom)**: Patient describes a consistent lack of energy, not relieved by sleep. Correlated with poor blood glucose control and reported visual disturbances. (Patient Transcript, EMR)
+## Symptom & Condition Summaries
 
-## 3. Medications & Treatments
-- **Current Medications**:
-  - Metformin 500 mg twice daily for Type 2 diabetes.
-  - Lisinopril 10 mg daily for hypertension.
-- **Past Medications**:
-  - Patient has previously tried atenolol for hypertension, discontinued due to side effects.
-- **Over-the-Counter (OTC) Interventions**: 
-  - Aspirin 500 mg as needed for headache, reports only partial alleviation of symptoms.
+- **Chest Discomfort (Symptom)**: Recently reported by the patient, who describes it as a mild but persistent sensation (EMR). The discomfort increases with physical activity and subsides during rest, suggesting a potential cardiovascular origin.
 
-## 4. Triggers, Causes, and Risk Factors
-- **Bright Screen Exposure (Trigger)**: Intensifies headaches and is associated with visual disturbances. (Patient Transcript)
-- **Poor Blood Glucose Control (Cause)**: Likely contributing to fatigue and possibly exacerbating headache frequency and severity. (EMR)
-- **Lifestyle Factors**: 
-  - Diet high in processed foods may be impacting diabetes management.
-  - Inconsistent exercise routine. 
+- **Palpitations (Symptom)**: The patient experiences irregular heartbeats, noted mostly in the evenings and during stress (Transcript). This symptom is connected to his reports of chest discomfort and may be influenced by his diabetic condition.
 
-## 5. Alert & Safety Notes
-- **Allergies**: No known drug allergies.
-- **Monitoring Points**: 
-  - Blood pressure monitoring advised bi-weekly, target under 140/90 mmHg.
-  - Blood glucose levels to be monitored daily; aiming for fasting glucose under 120 mg/dL.
+- **Type 2 Diabetes (Condition)**: Long-standing disease managed with oral hypoglycemics (EMR). Recent complaints suggest suboptimal blood glucose control, which may exacerbate cardiovascular symptoms.
 
-## 6. Suggested Next Steps / Considerations
-- **Further Testing**: Recommend referral to an ophthalmologist to assess visual disturbances linked to headache.
-- **Medication Review**: Evaluate efficacy of current pain management strategy for headaches; consider prescription migraine management options if frequency increases.
-- **Dietary Consultation**: Suggest consultation with a dietitian to improve glycemic control through dietary adjustments.
+- **Hypertension (Condition)**: Chronic, managed with ACE inhibitors. Blood pressure monitoring shows variability, possibly contributing to reported palpitations and chest discomfort.
 
-## 7. Transcript Highlights / Recent Patient Statements
-- "My headaches have gotten worse with all the extra time I've been spending in front of the computer."
-- "I feel tired all the time, even when I get a good night's sleep."
+## Medications & Treatments
 
-## 8. References / Data Sources
-- Knowledge graph nodes derived from patient's EMR and recent transcripts (last updated: 2023-03-15).
-- Historical medical data from EMR reports contributed to the chronic condition management details and medication history.
-- Patient self-reported symptoms and reactions collected during AI-assisted pre-visit interviews.
+- **Metformin 500 mg twice daily**: Continuously used for diabetes management, effectiveness in controlling glucose levels appears reduced based on recent glucose logs (EMR).
+
+- **Lisinopril 10 mg daily**: Administered for hypertension, well-tolerated, and no recent changes in dosage (EMR).
+
+- **Ibuprofen as needed**: Used occasionally for unrelated pain relief; no significant side effects reported (Transcript).
+
+## Triggers, Causes, and Risk Factors
+
+- **Physical Activity**: Aggravates chest discomfort (Transcript).
+- **Stress**: Associated with an increase in palpitations (Transcript).
+- **Dietary Habits**: Irregular meals possibly influencing glycemic control (EMR, Transcript).
+
+## Alert & Safety Notes
+
+- **Allergy to Penicillin**: Noted in the EMR; essential to avoid prescription or cross-reactive drugs.
+  
+- **Blood Glucose Monitoring**: Given the history of diabetes, regular monitoring is crucial, especially when reporting symptoms that may indicate poor control.
+
+## Suggested Next Steps / Considerations
+
+- **Cardiology Referral**: Recommended considering new cardiac symptoms and existing risk factors.
+- **Re-evaluation of Diabetes Treatment Plan**: Considering the reported blood sugar instability, an endocrinology consult could be appropriate.
+- **Daily Blood Pressure Monitoring**: Suggested to assess the effects of current antihypertensive therapy and its relationship to new symptoms.
+
+## Transcript Highlights / Recent Patient Statements
+
+- "I've been feeling these weird heartbeats mostly in the evenings."
+- "Sometimes, after I walk up the stairs, I have to stop because my chest feels tight."
+
+## References / Data Sources
+
+- **EMR Data**: Includes medical history, chronic conditions, current medications, allergies.
+- **Knowledge Graph Nodes**: Symptoms and conditions associated leading to the insights.
+- **Patient Transcript**: Inputs from a recent conversation on symptoms and lifestyle factors.
