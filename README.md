@@ -6,8 +6,8 @@ A modern healthcare web application built with Next.js and Cedar OS for HackGT's
 
 - **Voice-Powered Patient Intake**: Natural conversation with AI using Cedar OS voice capabilities
 - **Doctor Dashboard**: Manage patients, send intake requests, and review reports
-- **AI-Generated Medical Reports**: Structured summaries of patient conversations
-- **Real-time Notifications**: Keep doctors informed of patient activity
+- **AI-Generated Medical Reports**: Structured summaries of patient conversations with key insights and suggested next-steps.
+- **Knowledge Graph Visualization**: A graphical visualization of patients' symptoms, treatments, and condition using nodes.
 - **Professional Healthcare UI**: Clean, accessible design following medical UI best practices
 - **HIPAA-Mindful Data Handling**: Secure conversation storage and processing
 
