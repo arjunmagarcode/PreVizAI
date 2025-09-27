@@ -1,0 +1,126 @@
+{
+  "nodes": [
+    {
+      "name": "Persistent Headache",
+      "type": "Condition",
+      "aliases": [
+        "Headache"
+      ],
+      "confidence": 1.0,
+      "size": 4,
+      "color": "#D9534F",
+      "notes": "mentioned in turn 1"
+    },
+    {
+      "name": "Nausea",
+      "type": "Symptom",
+      "confidence": 1.0,
+      "size": 2.5,
+      "color": "#007BFF",
+      "notes": "mentioned in turn 1"
+    },
+    {
+      "name": "Meal Skipping",
+      "type": "Cause",
+      "confidence": 0.95,
+      "size": 1.8,
+      "color": "#F0AD4E",
+      "notes": "mentioned in turn 2"
+    },
+    {
+      "name": "Bright Screen Exposure",
+      "type": "Cause",
+      "confidence": 0.9,
+      "size": 1.8,
+      "color": "#F0AD4E",
+      "notes": "mentioned in turn 2"
+    },
+    {
+      "name": "Strong Smells",
+      "type": "Trigger",
+      "aliases": [
+        "Perfumes",
+        "Smoke"
+      ],
+      "confidence": 0.95,
+      "size": 1.8,
+      "color": "#F0AD4E",
+      "notes": "mentioned in turn 2"
+    },
+    {
+      "name": "Vision Changes",
+      "type": "Symptom",
+      "aliases": [
+        "Blurry Vision",
+        "Strained Eyes"
+      ],
+      "confidence": 0.95,
+      "size": 2.5,
+      "color": "#007BFF",
+      "notes": "mentioned in turn 3"
+    },
+    {
+      "name": "Sensitivity to Light",
+      "type": "Symptom",
+      "aliases": [
+        "Light Sensitivity"
+      ],
+      "confidence": 0.95,
+      "size": 2.5,
+      "color": "#007BFF",
+      "notes": "mentioned in turn 2"
+    },
+    {
+      "name": "Ibuprofen",
+      "type": "Medication",
+      "confidence": 0.98,
+      "size": 2.0,
+      "color": "#5CB85C",
+      "notes": "mentioned in turn 3"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "Persistent Headache",
+      "to_node": "Nausea",
+      "type": "associated_with",
+      "confidence": 0.9
+    },
+    {
+      "from_node": "Persistent Headache",
+      "to_node": "Meal Skipping",
+      "type": "may_be_caused_by",
+      "confidence": 0.85
+    },
+    {
+      "from_node": "Persistent Headache",
+      "to_node": "Bright Screen Exposure",
+      "type": "may_be_caused_by",
+      "confidence": 0.85
+    },
+    {
+      "from_node": "Nausea",
+      "to_node": "Strong Smells",
+      "type": "triggered_by",
+      "confidence": 0.9
+    },
+    {
+      "from_node": "Persistent Headache",
+      "to_node": "Vision Changes",
+      "type": "associated_with",
+      "confidence": 0.95
+    },
+    {
+      "from_node": "Persistent Headache",
+      "to_node": "Sensitivity to Light",
+      "type": "has_symptom",
+      "confidence": 0.95
+    },
+    {
+      "from_node": "Persistent Headache",
+      "to_node": "Ibuprofen",
+      "type": "treated_with",
+      "confidence": 0.95
+    }
+  ]
+}
