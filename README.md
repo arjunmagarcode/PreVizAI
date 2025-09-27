@@ -40,25 +40,25 @@ A modern healthcare web application built with Next.js and Cedar OS for HackGT's
    git clone <repository-url>
    cd previz
    ```
-
-2. **Install dependencies**
+2. **Install backend Python dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Install frontend Node.js dependencies**
    ```bash
    npm install
    ```
-
-3. **Set up environment variables**
-   Create a `.env.local` file in the root directory:
+4. **Set up environment variables**
+   Create a .env.local file in the root directory
    ```bash
    NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
    ```
-
-4. **Run the development server**
+5. **Run the development server**
    ```bash
    npm run dev
    ```
-
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+6. **Open your browser**
+  Navigate to https://localhost:3000
 
 ## 🎮 Usage
 
