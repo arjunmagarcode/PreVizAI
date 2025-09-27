@@ -2,11 +2,15 @@ import json
 import re
 from neo4j import GraphDatabase
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
 # -----------------------------
 # CONFIGURATION
 # -----------------------------
-client = OpenAI(api_key="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")
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "Ch8ss+P1ano!"))
 
 conversation_history = []
@@ -173,21 +177,20 @@ if __name__ == "__main__":
 
 
 '''
+Example Conversation:
+
 Hi, I’ve been having a persistent headache for the past week, and sometimes I feel nauseous in the mornings.
-'''
 
-'''
 The headaches usually start in the early morning and last for several hours. They’re a dull, throbbing pain most  of the time, but occasionally get sharper around my temples. The nausea tends to appear at the same time as the headaches,  and sometimes I feel slightly dizzy as well. The intensity of the headache can be mild to moderate on most days, but a few times it’s been strong enough that I have to lie down until it passes.
-'''
 
-'''
 2. Yes, I’ve noticed that my headaches get worse when I skip meals or spend a long time in front of a bright computer screen. Also, strong smells like perfumes or smoke sometimes make the nausea worse."
-'''
 
-'''
 3. "Yes, I’ve tried taking over-the-counter pain relievers like ibuprofen, and they help a little, but the relief doesn’t last very long. I also tried drinking more water and resting, which sometimes helps slightly, but the headaches keep coming back."
-'''
 
-'''
 4. “It’s a pretty intense pain, around a 7 or 8 out of 10. It mostly sits on both sides of my temples and sometimes spreads to the back of my head. It feels like a constant throbbing, and sometimes it gets sharp if I move quickly or look at bright lights.”
+
+"Actually, my daily routine has changed a bit recently. I’ve been working longer hours at my computer and haven’t been sleeping as well. My stress levels have also increased because of upcoming deadlines at work, and I think this might be contributing to the headaches and nausea."
+
+MATCH (n)-[r]->(m)
+RETURN n, r, m
 '''
