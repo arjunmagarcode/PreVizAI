@@ -43,7 +43,7 @@ def generate_insights_report_llm(graph_data, emr_data, transcript):
                             .replace("{TRANSCRIPT}", transcript)
 
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
 
@@ -57,20 +57,56 @@ def generate_insights_report_llm(graph_data, emr_data, transcript):
     return report_text
 
 
+def generate_next_steps_llm(graph_data, emr_data, transcript, output_file="nextSteps.json"):
+    """Generate recommended next steps with node impact and priority scores and save to JSON."""
+    NEXT_STEPS_PROMPT_PATH = os.path.join("LLM_Prompts", "nextStepsPrompt.txt")
+    with open(NEXT_STEPS_PROMPT_PATH, "r") as f:
+        prompt_template = f.read()
+
+    nodes_info = [
+        {
+            "name": node.get("name"),
+            "type": node.get("type"),
+            "context": node.get("context", {}),
+            "llm_summary": node.get("llm_summary", "")
+        }
+        for node in graph_data.get("nodes", [])
+    ]
+
+    prompt = prompt_template.replace("{NODES}", json.dumps(nodes_info, indent=2)) \
+                            .replace("{EMR_DATA}", json.dumps(emr_data, indent=2)) \
+                            .replace("{TRANSCRIPT}", transcript)
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    # Parse the LLM output as JSON
+    next_steps = json.loads(response.choices[0].message.content.strip())
+
+    # Write directly to JSON file
+    with open(output_file, "w") as f:
+        json.dump(next_steps, f, indent=2)
+
+    print(f"✅ Next steps saved to {output_file}")
+
+
 # -----------------------------
 # MAIN FUNCTION
 # -----------------------------
 def generate_patient_report(graph_json_file=EXAMPLE_GRAPH_JSON,
                             emr_json_file=EXAMPLE_EMR_JSON,
                             transcript_txt_file=EXAMPLE_TRANSCRIPT_TXT):
-    """Revise knowledge graph then generate insights report."""
-    annotated_graph = revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file)
 
     with open(emr_json_file, "r") as f:
         emr_data = json.load(f)
     with open(transcript_txt_file, "r") as f:
         transcript = f.read()
 
+    """Revise knowledge graph then generate insights report."""
+    annotated_graph = revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file)
+    generate_next_steps_llm(annotated_graph, emr_data, transcript)
     generate_insights_report_llm(annotated_graph, emr_data, transcript)
     return annotated_graph
 

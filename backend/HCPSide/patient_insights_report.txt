@@ -1,50 +1,58 @@
 ## Patient Overview / General Summary
 
-The patient is a 42-year-old male with a history of type 2 diabetes and hypertension. He is currently presenting with new-onset chest discomfort and intermittent palpitations, more pronounced over the past two weeks. His concerns include managing his blood sugar levels and the recent increase in palpitations, which he reported during his last pre-visit conversation. Diabetic control and cardiovascular stability should be prioritized due to the interaction with his existing chronic conditions.
+The patient is a 45-year-old female with a history of hypertension, allergies to penicillin, and a previous appendectomy. She presented with complaints of persistent headaches and fatigue during the recent conversation.
 
 ## Symptom & Condition Summaries
 
-- **Chest Discomfort (Symptom)**: Recently reported by the patient, who describes it as a mild but persistent sensation (EMR). The discomfort increases with physical activity and subsides during rest, suggesting a potential cardiovascular origin.
+### Symptoms:
+1. **Persistent Headache (Condition)**
+   - Triggers include screen exposure and meal skipping, partially relieved by ibuprofen.
+   - Linked to nausea episodes.
+   
+2. **Fatigue (Symptom)**
+   - Reports feeling excessively tired despite adequate sleep.
+   
+### Conditions:
+1. **Hypertension (Condition)**
+   - Present in EMR, managed with Lisinopril.
+   - No recent alerts or fluctuations in blood pressure.
 
-- **Palpitations (Symptom)**: The patient experiences irregular heartbeats, noted mostly in the evenings and during stress (Transcript). This symptom is connected to his reports of chest discomfort and may be influenced by his diabetic condition.
+### Causes/Triggers:
+1. **Bright Screen Exposure (Trigger)**
+   - Contributes to worsening headaches and eye strain.
 
-- **Type 2 Diabetes (Condition)**: Long-standing disease managed with oral hypoglycemics (EMR). Recent complaints suggest suboptimal blood glucose control, which may exacerbate cardiovascular symptoms.
+### Medications:
+1. **Lisinopril (Medication)**
+   - Current medication for hypertension.
+   - No reported adverse reactions or interactions.
 
-- **Hypertension (Condition)**: Chronic, managed with ACE inhibitors. Blood pressure monitoring shows variability, possibly contributing to reported palpitations and chest discomfort.
-
-## Medications & Treatments
-
-- **Metformin 500 mg twice daily**: Continuously used for diabetes management, effectiveness in controlling glucose levels appears reduced based on recent glucose logs (EMR).
-
-- **Lisinopril 10 mg daily**: Administered for hypertension, well-tolerated, and no recent changes in dosage (EMR).
-
-- **Ibuprofen as needed**: Used occasionally for unrelated pain relief; no significant side effects reported (Transcript).
+### Past Medications & Treatments:
+1. **Penicillin (Medication)**
+   - Allergic reaction reported in EMR.
 
 ## Triggers, Causes, and Risk Factors
 
-- **Physical Activity**: Aggravates chest discomfort (Transcript).
-- **Stress**: Associated with an increase in palpitations (Transcript).
-- **Dietary Habits**: Irregular meals possibly influencing glycemic control (EMR, Transcript).
+- **Environmental Triggers:** Bright screen exposure exacerbates headache symptoms.
+- **Lifestyle Factors:** No significant lifestyle factors mentioned in the transcript.
+- **Chronic Risk Factors:** Hypertension is a known chronic condition, currently managed with Lisinopril.
 
 ## Alert & Safety Notes
 
-- **Allergy to Penicillin**: Noted in the EMR; essential to avoid prescription or cross-reactive drugs.
-  
-- **Blood Glucose Monitoring**: Given the history of diabetes, regular monitoring is crucial, especially when reporting symptoms that may indicate poor control.
+- Allergy alert for penicillin documented in the EMR.
+- Regular monitoring of blood pressure recommended due to hypertension.
 
 ## Suggested Next Steps / Considerations
 
-- **Cardiology Referral**: Recommended considering new cardiac symptoms and existing risk factors.
-- **Re-evaluation of Diabetes Treatment Plan**: Considering the reported blood sugar instability, an endocrinology consult could be appropriate.
-- **Daily Blood Pressure Monitoring**: Suggested to assess the effects of current antihypertensive therapy and its relationship to new symptoms.
+- Consider further evaluation for persistent headaches beyond OTC medications.
+- Discuss lifestyle modifications to reduce screen exposure and manage fatigue.
+- Monitor blood pressure regularly and consider adjustments to Lisinopril if needed.
 
 ## Transcript Highlights / Recent Patient Statements
 
-- "I've been feeling these weird heartbeats mostly in the evenings."
-- "Sometimes, after I walk up the stairs, I have to stop because my chest feels tight."
+- Patient reported persistent headaches worsened by bright screen exposure and partial relief with ibuprofen.
+- Fatigue mentioned despite adequate sleep.
 
 ## References / Data Sources
 
-- **EMR Data**: Includes medical history, chronic conditions, current medications, allergies.
-- **Knowledge Graph Nodes**: Symptoms and conditions associated leading to the insights.
-- **Patient Transcript**: Inputs from a recent conversation on symptoms and lifestyle factors.
+- EMR records: History of hypertension, Lisinopril medication, penicillin allergy.
+- Patient transcript: Reports of headaches, fatigue, and lifestyle factors.

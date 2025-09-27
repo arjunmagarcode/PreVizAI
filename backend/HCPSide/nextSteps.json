@@ -1,0 +1,82 @@
+[
+  {
+    "action": "Refer patient to a neurologist",
+    "explanation": "Persistent headaches with a history of chronic migraine and sensitivity to triggers like bright light and strong odors warrant further evaluation by a specialist. EMR alerts for monitoring blood pressure suggest a comprehensive neurological assessment is needed.",
+    "priority": 1.0,
+    "affected_nodes": [
+      "Persistent Headache"
+    ]
+  },
+  {
+    "action": "Prescribe preventive migraine medication",
+    "explanation": "Considering the recurrent nature of chronic migraine and the partial relief from ibuprofen reported by the patient, initiating a preventive medication like topiramate or propranolol can help reduce the frequency and severity of headaches. This intervention aligns with the patient's history and symptomatology.",
+    "priority": 0.8,
+    "affected_nodes": [
+      "Migraine"
+    ]
+  },
+  {
+    "action": "Recommend a daily headache diary",
+    "explanation": "Encouraging the patient to maintain a headache diary noting triggers, symptoms, and medication usage can provide valuable insights for managing chronic migraine. This self-tracking tool aids in identifying patterns and optimizing treatment strategies based on individual responses.",
+    "priority": 0.7,
+    "affected_nodes": [
+      "Persistent Headache"
+    ]
+  },
+  {
+    "action": "Suggest migraine-specific glasses",
+    "explanation": "Given the patient's sensitivity to bright lights as a trigger for headaches, recommending specialized glasses with tinted lenses that filter out specific wavelengths of light can help reduce light-induced discomfort and potentially alleviate headache intensity. This intervention targets a known trigger.",
+    "priority": 0.6,
+    "affected_nodes": [
+      "Bright Lights"
+    ]
+  },
+  {
+    "action": "Advise on stress management techniques",
+    "explanation": "Since stress can exacerbate migraine symptoms, providing guidance on relaxation techniques, mindfulness practices, or cognitive-behavioral strategies can help mitigate stress-related triggers for persistent headaches. Improving stress coping mechanisms aligns with the patient's holistic care plan.",
+    "priority": 0.5,
+    "affected_nodes": [
+      "Persistent Headache"
+    ]
+  },
+  {
+    "action": "Encourage regular meal schedules",
+    "explanation": "Considering meal skipping is a reported trigger for headaches, emphasizing the importance of consistent, balanced meal timings can help stabilize blood sugar levels and prevent migraine onset related to hypoglycemia. Dietary adjustments addressing triggers are fundamental for headache management.",
+    "priority": 0.4,
+    "affected_nodes": [
+      "Skipping Meals"
+    ]
+  },
+  {
+    "action": "Recommend blue light filter for screens",
+    "explanation": "To alleviate eye strain and reduce headache exacerbation from prolonged screen exposure, suggesting a blue light filter for electronic devices can protect against harmful light wavelengths. Addressing the patient's complaint of eye fatigue aligns with symptom management strategies.",
+    "priority": 0.3,
+    "affected_nodes": [
+      "Bright Screens"
+    ]
+  },
+  {
+    "action": "Suggest relaxation techniques for nausea relief",
+    "explanation": "Given the interplay between nausea and migraine, proposing relaxation methods such as deep breathing or guided imagery can help alleviate nausea symptoms associated with persistent headaches. Non-pharmacological approaches complement the patient's existing management.",
+    "priority": 0.2,
+    "affected_nodes": [
+      "Nausea"
+    ]
+  },
+  {
+    "action": "Instruct on proper hydration practices",
+    "explanation": "Considering hydration levels can impact headache frequency and intensity, educating the patient on adequate fluid intake and the benefits of hydration for migraine management is crucial. Proper hydration is a simple yet effective lifestyle intervention for headache prevention.",
+    "priority": 0.1,
+    "affected_nodes": [
+      "Persistent Headache"
+    ]
+  },
+  {
+    "action": "Propose cognitive therapy for pain management",
+    "explanation": "Integrating cognitive-behavioral therapy techniques like pain distraction, coping strategies, and thought restructuring can empower the patient to better manage and cope with headache-related pain. Psychological interventions play a supportive role in enhancing overall well-being while addressing pain perception.",
+    "priority": 0.9,
+    "affected_nodes": [
+      "Intensity of Pain"
+    ]
+  }
+]

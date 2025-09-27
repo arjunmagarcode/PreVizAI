@@ -1,5 +1,4 @@
 # reviseKnowledgeGraph.py
-
 import json
 from neo4j import GraphDatabase
 from openai import OpenAI
@@ -12,8 +11,8 @@ from dotenv import load_dotenv
 LLM_PROMPTS_DIR = "LLM_Prompts"
 MOCK_DATA_DIR = "Mock_Patient_Information"
 
-EXAMPLE_GRAPH_JSON = os.path.join(MOCK_DATA_DIR, "exampleKnowledgeGraph.json")
-EXAMPLE_EMR_JSON = os.path.join(MOCK_DATA_DIR, "exampleEMR.json")
+EXAMPLE_GRAPH_JSON = os.path.join(os.path.dirname(__file__), "..", "generatedKnowledgeGraph.json")
+EXAMPLE_EMR_JSON = os.path.join(os.path.dirname(__file__), "..", "exampleEMR.json")
 EXAMPLE_TRANSCRIPT_TXT = os.path.join(MOCK_DATA_DIR, "exampleTranscript.txt")
 
 NODE_CONTEXT_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "nodeContextSummarizationPrompt.txt")
@@ -29,7 +28,7 @@ client = OpenAI(api_key=api_key)
 # GRAPH CONFIGURATION
 # -----------------------------
 NEO4J_URI = "bolt://localhost:7687"
-NEO4J_AUTH = ("neo4j", "Ch8ss+P1ano!")
+NEO4J_AUTH = ("neo4j", os.getenv("NEO4J_PASSWORD"))
 
 NODE_COLORS = {
     "Symptom": "#007BFF",
@@ -93,7 +92,7 @@ def annotate_graph_llm(graph_data, emr_data, transcript):
                                 .replace("{TRANSCRIPT}", transcript)
 
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -155,7 +154,31 @@ def update_graph(graph_data):
             )
 
 
-def revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file):
+def export_frontend_json(graph_data, output_path):
+    """
+    Export a frontend-ready JSON file that includes interactive tooltip fields:
+    context and llm_summary for each node.
+    """
+    frontend_graph = {
+        "nodes": [],
+        "edges": graph_data.get("edges", [])
+    }
+
+    for node in graph_data.get("nodes", []):
+        frontend_graph["nodes"].append({
+            "id": node.get("name"),
+            "type": node.get("type"),
+            "size": node.get("size", BASE_SIZE),
+            "color": NODE_COLORS.get(node.get("type"), "#cccccc"),
+            "context": node.get("context", {}),
+            "llm_summary": node.get("llm_summary", "")
+        })
+
+    with open(output_path, "w") as f:
+        json.dump(frontend_graph, f, indent=2)
+
+
+def revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file, frontend_output=None):
     """Full pipeline to revise knowledge graph with manual and LLM context."""
     with open(graph_json_file, "r") as f:
         graph_data = json.load(f)
@@ -167,5 +190,8 @@ def revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file):
     annotated_graph = annotate_graph_manual(graph_data, emr_data, transcript)
     annotated_graph = annotate_graph_llm(annotated_graph, emr_data, transcript)
     update_graph(annotated_graph)
+
+    if frontend_output:
+        export_frontend_json(annotated_graph, frontend_output)
 
     return annotated_graph

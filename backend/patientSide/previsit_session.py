@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from patient_graph_utils import init_clients, generate_followup, generate_graph_nodes, clear_graph, update_graph
+import json
 
 # -----------------------------
 # LOAD ENVIRONMENT VARIABLES
@@ -13,10 +14,19 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LLM_PROMPTS_DIR = os.path.join(BASE_DIR, "patientSide_LLM_Prompts")
 QUESTION_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "questionPrompting.txt")
+EMR_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "exampleEMR.json"))
 GRAPH_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "knowledgeGraphPrompt.txt")
 
+# Output JSON path for knowledge graph
+GRAPH_OUTPUT_PATH = os.path.abspath(os.path.join(BASE_DIR, "..", "generatedKnowledgeGraph.json"))
+
+with open(EMR_PATH, "r") as f:
+    emr_data = json.load(f)
+
 with open(QUESTION_PROMPT_PATH, "r") as f:
-    question_prompt = f.read()
+    prompt = f.read()
+
+question_prompt = prompt.replace("Refer to this patient's EMR: ", str(emr_data))
 
 with open(GRAPH_PROMPT_PATH, "r") as f:
     graph_prompt = f.read()
@@ -25,7 +35,7 @@ with open(GRAPH_PROMPT_PATH, "r") as f:
 # INITIALIZE CLIENTS
 # -----------------------------
 api_key = os.getenv("OPENAI_API_KEY")
-client, driver = init_clients(api_key, neo4j_auth=("neo4j", "Ch8ss+P1ano!"))
+client, driver = init_clients(api_key, neo4j_auth=("neo4j", os.getenv("NEO4J_PASSWORD")))
 
 conversation_history = []
 patient_graph_data = {"nodes": [], "edges": []}
@@ -74,6 +84,13 @@ def patient_session(max_cycles=3):
             print("⚠️ No new graph data extracted this cycle.")
 
         cycles += 1  
+
+    # -----------------------------
+    # Save JSON of the knowledge graph
+    # -----------------------------
+    with open(GRAPH_OUTPUT_PATH, "w") as f:
+        json.dump(patient_graph_data, f, indent=4)
+    print(f"\nPatient knowledge graph saved to {GRAPH_OUTPUT_PATH}")
 
     print("\nThank you for completing the pre-visit form. Reach out if you need anything, and we look forward to meeting with you.")
 

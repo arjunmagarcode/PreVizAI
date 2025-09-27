@@ -43,7 +43,7 @@ def init_clients(api_key, neo4j_uri="bolt://localhost:7687", neo4j_auth=("neo4j"
 def generate_followup(client, question_prompt, conversation_text):
     prompt = f"Patient conversation so far: {conversation_text}\n\n{question_prompt}"
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content.strip()
@@ -51,7 +51,7 @@ def generate_followup(client, question_prompt, conversation_text):
 def generate_graph_nodes(client, graph_prompt, conversation_text):
     prompt = f"Conversation: {conversation_text}\n\n{graph_prompt}"
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
     output = response.choices[0].message.content.strip()

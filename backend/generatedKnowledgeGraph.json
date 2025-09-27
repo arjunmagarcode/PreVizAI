@@ -1,0 +1,254 @@
+{
+    "nodes": [
+        {
+            "name": "Persistent Headache",
+            "type": "Condition",
+            "size": 4,
+            "color": "#D9534F",
+            "confidence": 0.95,
+            "notes": "turn 1: 'persistent headache for the past week'"
+        },
+        {
+            "name": "Intense Pain",
+            "type": "Symptom",
+            "size": 2.5,
+            "color": "#007BFF",
+            "notes": "turn 4: 'pretty intense pain, around a 7 or 8 out of 10'"
+        },
+        {
+            "name": "Nausea",
+            "type": "Symptom",
+            "size": 2.5,
+            "color": "#007BFF",
+            "notes": "turn 1: 'sometimes I feel nauseous in the mornings'"
+        },
+        {
+            "name": "Bright Lights",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "turn 4: 'it gets sharp if I look at bright lights'"
+        },
+        {
+            "name": "Rapid Movement",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "turn 4: 'gets sharp if I move quickly'"
+        },
+        {
+            "name": "Headache",
+            "type": "Condition",
+            "size": 4,
+            "color": "#D9534F",
+            "confidence": 0.95,
+            "notes": "turn 1: 'I've been having a persistent headache for the past week.'"
+        },
+        {
+            "name": "Intensity of Pain",
+            "type": "Symptom",
+            "size": 2.5,
+            "color": "#007BFF",
+            "notes": "turn 2: 'It's a pretty intense pain, around a 7 or 8 out of 10.'"
+        },
+        {
+            "name": "Location of Pain",
+            "type": "Symptom",
+            "size": 2.5,
+            "color": "#007BFF",
+            "notes": "turn 2: 'It mostly sits on both sides of my temples and sometimes spreads to the back of my head.'"
+        },
+        {
+            "name": "Bright Lights",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "turn 2: 'sometimes it gets sharp if I look at bright lights.'"
+        },
+        {
+            "name": "Skipping Meals",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "turn 4: 'more sensitive to things like skipping meals.'"
+        },
+        {
+            "name": "Screen Time",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "turn 4: 'more sensitive to... screen time.'"
+        },
+        {
+            "name": "Nausea",
+            "type": "Symptom",
+            "size": 2.5,
+            "color": "#007BFF",
+            "notes": "turn 1: 'and sometimes I feel nauseous in the mornings.'"
+        },
+        {
+            "name": "Persistent Headache",
+            "type": "Condition",
+            "size": 4,
+            "color": "#D9534F",
+            "confidence": 0.95,
+            "notes": "mentioned in turn 1: 'persistent headache for the past week'"
+        },
+        {
+            "name": "Migraine",
+            "type": "Subcondition",
+            "size": 3.5,
+            "color": "#D9534F",
+            "notes": "mentioned in turn 2: 'history of migraines'"
+        },
+        {
+            "name": "Nausea",
+            "type": "Symptom",
+            "size": 2.5,
+            "color": "#007BFF",
+            "notes": "mentioned in turn 1: 'sometimes I feel nauseous in the mornings'"
+        },
+        {
+            "name": "Skipping Meals",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "mentioned in turn 2"
+        },
+        {
+            "name": "Bright Screens",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "mentioned in turn 2"
+        },
+        {
+            "name": "Strong Smells",
+            "type": "Trigger",
+            "size": 1.8,
+            "color": "#F0AD4E",
+            "notes": "turn 2: 'strong smells like perfumes or smoke sometimes make the nausea worse'"
+        }
+    ],
+    "edges": [
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Intense Pain",
+            "type": "has_symptom",
+            "confidence": 0.95,
+            "weight": 0.95
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Nausea",
+            "type": "has_symptom",
+            "confidence": 0.95,
+            "weight": 0.95
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Bright Lights",
+            "type": "may_be_caused_by",
+            "confidence": 0.8,
+            "weight": 0.8
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Rapid Movement",
+            "type": "may_be_caused_by",
+            "confidence": 0.8,
+            "weight": 0.8
+        },
+        {
+            "from_node": "Intense Pain",
+            "to_node": "Bright Lights",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Intense Pain",
+            "to_node": "Rapid Movement",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Headache",
+            "to_node": "Intensity of Pain",
+            "type": "has_symptom",
+            "confidence": 0.9,
+            "weight": 0.9
+        },
+        {
+            "from_node": "Headache",
+            "to_node": "Location of Pain",
+            "type": "has_symptom",
+            "confidence": 0.9,
+            "weight": 0.9
+        },
+        {
+            "from_node": "Headache",
+            "to_node": "Bright Lights",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Headache",
+            "to_node": "Skipping Meals",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Headache",
+            "to_node": "Screen Time",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Headache",
+            "to_node": "Nausea",
+            "type": "has_symptom",
+            "confidence": 0.9,
+            "weight": 0.9
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Migraine",
+            "type": "related_to",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Nausea",
+            "type": "related_to",
+            "confidence": 0.9,
+            "weight": 0.9
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Skipping Meals",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Persistent Headache",
+            "to_node": "Bright Screens",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        },
+        {
+            "from_node": "Nausea",
+            "to_node": "Strong Smells",
+            "type": "may_be_caused_by",
+            "confidence": 0.85,
+            "weight": 0.85
+        }
+    ]
+}
