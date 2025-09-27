@@ -1,42 +1,47 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useCedarStore, useVoice } from "cedar-os";
-// import { VoiceIndicator } from '@/cedar/components/voice/VoiceIndicator';
-import { VoiceIndicator } from '@/cedar/components/voice/VoiceIndicator';
-
-import { Mic, MicOff, Send, CheckCircle, ArrowLeft } from "lucide-react";
+import { VoiceIndicator } from "@/cedar/components/voice/VoiceIndicator";
+import { Mic, MicOff, Send, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { VoicePermissionHelper } from "@/components/VoicePermissionHelper";
 
 export default function PatientIntake() {
-  // 1) Voice store + hook
   const voiceStore: any = useCedarStore((s: any) => s.voice);
   const voice = useVoice();
+  const router = useRouter();
 
-  // 2) IMPORTANT: set the endpoint so Cedar knows where to send audio
+  // keep the sid available for redirect
+  const sidRef = useRef<string>("");
+
+  // Point Cedar voice at our endpoint with a fresh per-load session id
   useEffect(() => {
-    //voiceStore?.setVoiceEndpoint?.("/api/voice"); // <-- this was missing
+    const sid =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? (crypto as any).randomUUID()
+        : Math.random().toString(36).slice(2);
+
+    sidRef.current = sid;
+    voiceStore?.setVoiceEndpoint?.(`/api/voice?sid=${sid}`);
     return () => voiceStore?.resetVoiceState?.();
   }, [voiceStore]);
 
-  // Messages shape can be items[] or just [] depending on version
+  // Cedar messages (can be s.messages.items or s.messages depending on version)
   const rawMessages = useCedarStore((s: any) => s?.messages?.items ?? s?.messages ?? []);
   const messages: any[] = useMemo(() => (Array.isArray(rawMessages) ? rawMessages : []), [rawMessages]);
 
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // ✅ Button is clickable once there's any message
+  const canComplete = messages.length > 0;
 
-  // At least 2 exchanges (4 messages) before “Complete”
-  const conversationLength = messages.length;
-  const canComplete = conversationLength >= 4;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRequestPermission = async () => {
     try {
       await voice.checkVoiceSupport?.();
       await voice.requestVoicePermission();
-    } catch (err) {
-      console.error("Permission request error:", err);
+    } catch {
       alert("Unable to request microphone permission. Check browser settings and try again.");
     }
   };
@@ -44,27 +49,16 @@ export default function PatientIntake() {
   const handleVoiceToggle = async () => {
     try {
       await voice.checkVoiceSupport?.();
-
-      if (voice.voicePermissionStatus === "prompt") {
-        await voice.requestVoicePermission();
-      }
+      if (voice.voicePermissionStatus === "prompt") await voice.requestVoicePermission();
       if (voice.voicePermissionStatus === "denied") {
         alert("Please enable microphone permissions in your browser settings.");
         return;
       }
-
-      // Start/stop
-      if (!voice.isListening) {
-        await voice.startListening();
-      } else {
-        await voice.stopListening(); // will POST to /api/voice and then auto-play + push messages
-      }
-    } catch (err) {
-      console.error("Voice control error:", err);
+      if (!voice.isListening) await voice.startListening();
+      else await voice.stopListening(); // triggers POST to /api/voice
+    } catch {
       alert("Microphone error. Please check your browser settings and try again.");
-      try {
-        voice.resetVoiceState?.();
-      } catch { }
+      try { voice.resetVoiceState?.(); } catch { }
     }
   };
 
@@ -72,33 +66,20 @@ export default function PatientIntake() {
     if (!canComplete) return;
     setIsSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 600)); // simulate
-      setIsCompleted(true);
+      // Save minimal intake info for the doctor view (you can add patientId later)
+      const latestIntake = {
+        sid: sidRef.current,
+        patientName: "Demo Patient", // change if you capture name
+        completedAt: new Date().toISOString(),
+      };
+      sessionStorage.setItem("latestIntake", JSON.stringify(latestIntake));
+
+      // Redirect to doctor's dashboard
+      router.push("/doctor");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (isCompleted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Intake Complete!</h1>
-          <p className="text-gray-600 mb-6">
-            Thanks! Your doctor has been notified and will review your information.
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Return Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
@@ -135,6 +116,10 @@ export default function PatientIntake() {
               <li>Answer the AI’s follow-up questions</li>
               <li>Complete when ready</li>
             </ol>
+            <VoicePermissionHelper
+              permissionStatus={voice?.voicePermissionStatus || "prompt"}
+              onRequestPermission={handleRequestPermission}
+            />
             {voice?.voiceError && (
               <p className="text-xs text-red-600 p-2 bg-red-50 rounded">Mic error: {String(voice.voiceError)}</p>
             )}
@@ -144,11 +129,6 @@ export default function PatientIntake() {
         {/* Main Chat */}
         <div className="md:col-span-2 bg-white rounded-xl shadow-lg flex flex-col">
           <div className="flex-1 p-6 overflow-y-auto">
-            <VoicePermissionHelper
-              permissionStatus={voice?.voicePermissionStatus || "prompt"}
-              onRequestPermission={handleRequestPermission}
-            />
-
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 mt-12">
                 <Mic className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -161,8 +141,8 @@ export default function PatientIntake() {
                   <div key={idx} className={`flex ${m.role === "assistant" ? "justify-start" : "justify-end"}`}>
                     <div
                       className={`max-w-[80%] p-4 rounded-lg ${m.role === "assistant"
-                        ? "bg-blue-100 text-blue-900 rounded-bl-none"
-                        : "bg-green-100 text-green-900 rounded-br-none"
+                          ? "bg-blue-100 text-blue-900 rounded-bl-none"
+                          : "bg-green-100 text-green-900 rounded-br-none"
                         }`}
                     >
                       <div className="text-xs font-medium mb-1 opacity-70">
@@ -186,8 +166,8 @@ export default function PatientIntake() {
                   onClick={handleVoiceToggle}
                   disabled={!voice || voice.voicePermissionStatus === "denied"}
                   className={`flex items-center justify-center w-14 h-14 rounded-full transition-all ${voice?.isListening
-                    ? "bg-red-500 hover:bg-red-600 text-white"
-                    : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      ? "bg-red-500 hover:bg-red-600 text-white"
+                      : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
                     }`}
                 >
                   {voice?.isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
@@ -197,7 +177,6 @@ export default function PatientIntake() {
                   <span className="text-sm font-medium text-gray-900">
                     {voice?.isListening ? "Listening..." : voice?.isSpeaking ? "AI Speaking..." : "Click to speak"}
                   </span>
-                  <span className="text-xs text-gray-500">{conversationLength} messages exchanged</span>
                 </div>
 
                 {voice?.isListening && (
@@ -212,8 +191,8 @@ export default function PatientIntake() {
                 onClick={handleCompleteIntake}
                 disabled={!canComplete || isSubmitting}
                 className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${canComplete && !isSubmitting
-                  ? "bg-green-500 hover:bg-green-600 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    ? "bg-green-500 hover:bg-green-600 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
               >
                 {isSubmitting ? (
@@ -226,7 +205,12 @@ export default function PatientIntake() {
             </div>
 
             {!canComplete && (
-              <p className="text-xs text-gray-500 mt-2">Keep talking to unlock the complete button</p>
+              <p className="text-xs text-gray-500 mt-2">
+                Start the conversation to enable completion.
+              </p>
+            )}
+            {canComplete && (
+              <p className="text-xs text-green-600 mt-2">You can submit whenever you’re ready.</p>
             )}
           </div>
         </div>
