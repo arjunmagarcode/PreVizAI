@@ -29,9 +29,13 @@ A modern healthcare web application built with Next.js and Cedar OS for HackGT's
 
 ## 📋 Prerequisites
 
+- Python 3.11+ and pip
+- Virtual environment tool (recommended: `venv`)
 - Node.js 18+ 
 - npm or yarn
 - OpenAI API key
+- Neo4j Desktop or Neo4j Aura account
+- Git (for cloning the repository)
 
 ## 🛠️ Installation
 
