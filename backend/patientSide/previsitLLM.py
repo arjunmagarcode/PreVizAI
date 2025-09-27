@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 import os
 
 # -----------------------------
+# PATH CONFIGURATION
+# -----------------------------
+LLM_PROMPTS_DIR = "patientSide_LLM_Prompts"
+
+QUESTION_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "questionPrompting.txt")
+GRAPH_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "knowledgeGraphPrompt.txt")
+
+# -----------------------------
 # CONFIGURATION
 # -----------------------------
 load_dotenv()
@@ -30,14 +38,17 @@ BASE_SIZE = 50
 IMPORTANCE_SCALE = 50  # scale factor for importance/confidence
 
 # -----------------------------
-# HELPER FUNCTIONS
+# LOAD PROMPTS
 # -----------------------------
-with open("questionPrompting.txt", 'r') as file:
+with open(QUESTION_PROMPT_PATH, 'r') as file:
     questionPrompt = file.read()
 
-with open("knowledgeGraphPrompt.txt", 'r') as file:
+with open(GRAPH_PROMPT_PATH, 'r') as file:
     graphPrompt = file.read()
 
+# -----------------------------
+# HELPER FUNCTIONS
+# -----------------------------
 def generate_followup(conversation_text):
     prompt = f"""
 Patient conversation so far: {conversation_text}
@@ -175,7 +186,6 @@ def patient_session(max_cycles=3):
 if __name__ == "__main__":
     patient_session(max_cycles=3)
 
-
 '''
 Example Conversation:
 
@@ -190,6 +200,8 @@ The headaches usually start in the early morning and last for several hours. The
 4. “It’s a pretty intense pain, around a 7 or 8 out of 10. It mostly sits on both sides of my temples and sometimes spreads to the back of my head. It feels like a constant throbbing, and sometimes it gets sharp if I move quickly or look at bright lights.”
 
 "Actually, my daily routine has changed a bit recently. I’ve been working longer hours at my computer and haven’t been sleeping as well. My stress levels have also increased because of upcoming deadlines at work, and I think this might be contributing to the headaches and nausea."
+
+"When the headaches and nausea hit, I usually try to rest in a dark, quiet room and drink water. I sometimes take ibuprofen, which helps a little, and avoid screens or bright lights. Eating a small snack can also help a bit if I’ve skipped meals. Other than that, I haven’t found anything that fully relieves the symptoms."
 
 MATCH (n)-[r]->(m)
 RETURN n, r, m

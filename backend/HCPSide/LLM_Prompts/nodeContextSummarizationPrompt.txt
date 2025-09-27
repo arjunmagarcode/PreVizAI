@@ -67,3 +67,4 @@ Output:
 - Integrate node context and connections naturally in the summary.
 - Avoid redundant phrasing; each summary should stand alone.
 - Highlight patterns, triggers, and responses to treatment if present.
+- The date today is September 28, 2025.

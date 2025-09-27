@@ -1,48 +1,44 @@
 # Patient Insights Report
 
 ## 1. Patient Overview / General Summary
-The patient is a 42-year-old male with a history of hypertension and type 2 diabetes. He presents today complaining of increased frequency of migraines over the past month and has noted ineffective control with his current medication regimen. Recent lifestyle changes include increased stress at work and disrupted sleep patterns. The primary acute concerns are the management of his migraines and the evaluation of his diabetes control in the context of his recent lifestyle changes.
+Patient is a 52-year-old male with a history of Type 2 diabetes and hypertension. Presents with complaints of increasing episodes of headache and fatigue over the past two months as reported during the latest pre-visit consultation. Chronic conditions are managed with metformin and lisinopril, and there are no reported drug allergies. Recent concerns include difficulty managing blood sugar levels and new onset visual disturbances accompanying headaches.
 
 ## 2. Symptom & Condition Summaries
-- **Node: Migraine (Condition)**
-  Context: The frequency and intensity of migraines have increased. Current medications are not adequately managing the pain. Associated with nausea and visual disturbances.
-- **Node: Visual Disturbances (Symptom)**
-  Context: Reported alongside migraine episodes, likely an aura, contributing to the severity of headache.
-- **Node: Increased Stress (Condition)**
-  Context: Noted as a likely trigger for migraine exacerbation, and may be influencing glycemic control.
-- **Node: Sleep Disruption (Condition)**
-  Context: Correlated with increased migraine frequency and poor diabetes management.
+- **Headache (Symptom)**: Reports headaches of moderate intensity, worsened by bright lighting and prolonged computer use, with some relief provided by over-the-counter painkillers. Linked to recent visual disturbances and fatigue episodes. (EMR)
+- **Fatigue (Symptom)**: Patient describes a consistent lack of energy, not relieved by sleep. Correlated with poor blood glucose control and reported visual disturbances. (Patient Transcript, EMR)
 
 ## 3. Medications & Treatments
-- **Node: Metformin (Medication)**
-  Context: Used for diabetes management, good tolerance, 500 mg twice daily.
-- **Node: Sumatriptan (Medication)**
-  Context: Currently used for migraine without sufficient relief; patient reports 50 mg as needed.
-- **Node: Ibuprofen (Medication)**
-  Context: Over-the-counter, used for additional pain relief, partially effective for migraine symptoms.
+- **Current Medications**:
+  - Metformin 500 mg twice daily for Type 2 diabetes.
+  - Lisinopril 10 mg daily for hypertension.
+- **Past Medications**:
+  - Patient has previously tried atenolol for hypertension, discontinued due to side effects.
+- **Over-the-Counter (OTC) Interventions**: 
+  - Aspirin 500 mg as needed for headache, reports only partial alleviation of symptoms.
 
 ## 4. Triggers, Causes, and Risk Factors
-- **Environmental Triggers:** Increased work stress noted as an exacerbating factor for migraine episodes.
-- **Lifestyle Factors:** Recent poor sleep patterns are likely contributing to both poor migraine and diabetes control.
-- **Genetic/Chronic Factors:** History of hypertension and type 2 diabetes, both of which require ongoing monitoring and can influence overall health status.
+- **Bright Screen Exposure (Trigger)**: Intensifies headaches and is associated with visual disturbances. (Patient Transcript)
+- **Poor Blood Glucose Control (Cause)**: Likely contributing to fatigue and possibly exacerbating headache frequency and severity. (EMR)
+- **Lifestyle Factors**: 
+  - Diet high in processed foods may be impacting diabetes management.
+  - Inconsistent exercise routine. 
 
 ## 5. Alert & Safety Notes
-- **Alerts:** Allergic to penicillin, noted in EMR.
-- **Monitoring Points:** Regular monitoring of blood pressure and blood sugar levels is essential, especially given current control issues and medication regimen.
+- **Allergies**: No known drug allergies.
+- **Monitoring Points**: 
+  - Blood pressure monitoring advised bi-weekly, target under 140/90 mmHg.
+  - Blood glucose levels to be monitored daily; aiming for fasting glucose under 120 mg/dL.
 
 ## 6. Suggested Next Steps / Considerations
-- **Potential Adjustments:** Review and possibly adjust migraine medication. Consider adding a preventive migraine treatment if patterns persist.
-- **Follow-Up:** Due to increased migraine frequency and recent stress, recommend a follow-up with a neurologist.
-- **Testing:** A1c and fasting blood glucose tests to evaluate current diabetes control.
+- **Further Testing**: Recommend referral to an ophthalmologist to assess visual disturbances linked to headache.
+- **Medication Review**: Evaluate efficacy of current pain management strategy for headaches; consider prescription migraine management options if frequency increases.
+- **Dietary Consultation**: Suggest consultation with a dietitian to improve glycemic control through dietary adjustments.
 
 ## 7. Transcript Highlights / Recent Patient Statements
-- "My migraines have gotten worse recently, almost every other day now."
-- "The sumatriptan doesn’t seem to cut it anymore, and I’ve been under a lot of stress."
-- "I’ve been waking up a lot at night, not sure why, but it’s affecting my day."
+- "My headaches have gotten worse with all the extra time I've been spending in front of the computer."
+- "I feel tired all the time, even when I get a good night's sleep."
 
 ## 8. References / Data Sources
-- **EMR Entries:** Dated 2023-03-05 include medications, allergy information, and chronic conditions.
-- **Knowledge Graph Nodes:** Utilized for symtom and medication connections and summaries.
-- **Patient Transcript:** Conversation dated 2023-03-15 provided recent symptom descriptions and lifestyle changes.
-
-This report synthesizes comprehensive patient data to assist in clinical decision-making, prioritizing critical issues while providing actionable insights for ongoing care management.
+- Knowledge graph nodes derived from patient's EMR and recent transcripts (last updated: 2023-03-15).
+- Historical medical data from EMR reports contributed to the chronic condition management details and medication history.
+- Patient self-reported symptoms and reactions collected during AI-assisted pre-visit interviews.
