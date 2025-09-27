@@ -1,184 +1,141 @@
-```markdown
-# 🏆 [PROJECT NAME]
-*Tagline: Brief one-liner describing what your project does*
+# PreViz - AI-Powered Patient Intake System
 
-## 📋 Project Overview
-Brief description of your project (2-3 sentences). What problem does it solve and how?
+A modern healthcare web application built with Next.js and Cedar OS for HackGT's Cedar OS sponsor track. This application streamlines pre-appointment patient intake through voice-powered AI conversations, allowing patients to describe their symptoms naturally and providing doctors with comprehensive intake reports.
 
-## 🎯 Inspiration
-Why did we build this? What hackathon tracks are we targeting?
-- 🏥 **Primary Track:** [Track Name] - [Prize Amount]
-- 🤖 **Secondary Track:** [Track Name] - [Prize Amount]
+## 🎯 Features
 
-## ⚡ What it does
-- Feature 1: Description
-- Feature 2: Description  
-- Feature 3: Description
-- Feature 4: Description
+- **Voice-Powered Patient Intake**: Natural conversation with AI using Cedar OS voice capabilities
+- **Doctor Dashboard**: Manage patients, send intake requests, and review reports
+- **AI-Generated Medical Reports**: Structured summaries of patient conversations
+- **Real-time Notifications**: Keep doctors informed of patient activity
+- **Professional Healthcare UI**: Clean, accessible design following medical UI best practices
+- **HIPAA-Mindful Data Handling**: Secure conversation storage and processing
 
-## 🛠️ How we built it
-**Tech Stack:**
-- **Frontend:** React/React Native/HTML+CSS
-- **Backend:** Node.js/Python Flask/etc
-- **Database:** MongoDB Atlas/Firebase/etc
-- **AI/ML:** TensorFlow/OpenAI API/etc
-- **Cloud:** AWS/Google Cloud/etc
+## 🏗️ Application Flow
 
-**Architecture:**
-Brief description of system architecture and data flow.
+1. **Doctor Dashboard**: Doctor sends pre-appointment AI intake request to patient
+2. **Patient Interface**: Patient receives notification and starts voice conversation with AI
+3. **AI Conversation**: Natural dialogue where AI asks follow-up questions about symptoms
+4. **Report Generation**: Conversation is processed into structured medical report
+5. **Doctor Review**: Doctor receives notification and can view comprehensive patient report
 
-## 🧠 Challenges we ran into
-- Challenge 1 and how we solved it
-- Challenge 2 and how we solved it
-- Challenge 3 and how we solved it
+## 🚀 Technology Stack
 
-## 🎉 Accomplishments that we're proud of
-- Achievement 1
-- Achievement 2
-- Achievement 3
-- Achievement 4
+- **Next.js 15** with App Router and TypeScript
+- **Cedar OS** for voice integration and AI conversations
+- **OpenAI GPT-4** for conversation processing and report generation
+- **Tailwind CSS** for responsive styling
+- **Lucide React** for professional icons
 
-## 📚 What we learned
-- Learning 1
-- Learning 2
-- Learning 3
+## 📋 Prerequisites
 
-## 🚀 What's next for [PROJECT NAME]
-- Future feature 1
-- Future feature 2
-- Business/scaling plans
+- Node.js 18+ 
+- npm or yarn
+- OpenAI API key
 
-## 💻 Installation & Setup
+## 🛠️ Installation
 
-### Prerequisites
-- Node.js 18+
-- MongoDB Atlas account
-- [Other requirements]
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd previz
+   ```
 
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/[username]/[repo-name]
-cd [repo-name]
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# Install dependencies
-npm install
+3. **Set up environment variables**
+   Create a `.env.local` file in the root directory:
+   ```bash
+   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+   ```
 
-# Set up environment variables
-cp .env.example .env
-# Add your API keys and database URLs
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-# Start the development server
-npm start
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🎮 Usage
+
+### For Doctors:
+1. Visit `/doctor` to access the dashboard
+2. View upcoming appointments and patient statuses
+3. Send intake requests to patients who need pre-appointment screening
+4. Review completed intake reports with structured medical information
+
+### For Patients:
+1. Visit `/patient` to start the intake process
+2. Click the microphone button to begin voice conversation
+3. Describe your main health concerns naturally
+4. Answer follow-up questions from the AI assistant
+5. Complete and submit your intake when finished
+
+## 🏥 Medical Report Structure
+
+The AI generates structured reports including:
+- Chief complaint in patient's own words
+- Symptoms, duration, and severity
+- Triggers and relieving factors
+- Medical history and current medications
+- Red flag symptoms requiring immediate attention
+- Functional impact on daily activities
+- Recommended follow-up actions
+
+## 🔧 Cedar OS Integration
+
+This application leverages Cedar OS for:
+- Voice permission management
+- Real-time speech-to-text conversion
+- AI voice synthesis for responses
+- Message store management
+- Seamless conversation flow
+
+## 📁 Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── chat/          # OpenAI conversation endpoint
+│   │   └── generate-report/ # Report generation endpoint
+│   ├── doctor/            # Doctor dashboard
+│   ├── patient/           # Patient intake interface
+│   └── page.tsx           # Homepage with navigation
+├── components/
+│   └── providers.tsx      # Cedar OS provider configuration
 ```
 
-## 📱 Usage
-Step-by-step instructions on how to use the application:
-1. Step 1
-2. Step 2
-3. Step 3
+## 🔒 Security & Privacy
 
-## 🎬 Demo
-- **Live Demo:** [Deployed URL if available]
-- **Demo Video:** [YouTube/Vimeo link]
-- **Screenshots:** 
-  ![Screenshot 1](./screenshots/demo1.png)
-  ![Screenshot 2](./screenshots/demo2.png)
+- Voice data is processed securely through Cedar OS
+- Conversations are stored temporarily for report generation
+- Medical data handling follows HIPAA-mindful practices
+- API endpoints include proper error handling and validation
 
-## 👥 Team
+## 🚧 Development
 
-| Name | Role | GitHub | LinkedIn |
-|------|------|--------|----------|
-| **[Member 1 Name]** | Full Stack Developer | [@github-username](https://github.com/username) | [LinkedIn](https://linkedin.com/in/username) |
-| **[Member 2 Name]** | Frontend Developer | [@github-username](https://github.com/username) | [LinkedIn](https://linkedin.com/in/username) |
-| **[Member 3 Name]** | Backend Developer | [@github-username](https://github.com/username) | [LinkedIn](https://linkedin.com/in/username) |
-| **[Member 4 Name]** | AI/ML Engineer | [@github-username](https://github.com/username) | [LinkedIn](https://linkedin.com/in/username) |
+This project was built for HackGT 2025 as part of the Cedar OS sponsor track. It demonstrates the power of voice-enabled AI in healthcare applications.
 
-## 🏆 Hackathon Tracks
-- **[Primary Track Name]:** Why this project fits and deserves to win
-- **[Secondary Track Name]:** How this project also qualifies for this track
-- **[Tertiary Track Name]:** Additional track relevance
-
-## 📊 Business Impact
-- **Market Size:** $X billion market opportunity
-- **Cost Savings:** $X saved per user/year
-- **User Impact:** X% improvement in [metric]
-- **Scalability:** Can serve X million users
-
-## 🔒 Privacy & Security
-Brief description of data privacy measures and security considerations.
+### Key Development Features:
+- TypeScript for type safety
+- Responsive design for all device types
+- Error handling for voice permissions
+- Professional medical UI components
+- Real-time conversation display
 
 ## 📄 License
-MIT License - see [LICENSE.md](LICENSE.md) for details
 
-## 🙏 Acknowledgments
-- HackGT12 organizers
-- Sponsor companies (MongoDB, Impiricus, etc.)
-- Open source libraries used
-- Any mentors or helpers
+This project is part of HackGT 2025 submission for the Cedar OS sponsor track.
 
-## 📞 Contact
-For questions about this project, reach out to any team member or create an issue in this repository.
+## 🤝 Contributing
 
----
-*Built with ❤️ at HackGT12 - September 26-28, 2025*
-```
-
-## 📁 **Recommended Repository Structure:**
-
-```
-your-project-name/
-├── README.md
-├── LICENSE.md
-├── .env.example
-├── .gitignore
-├── package.json
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── utils/
-│   └── assets/
-├── backend/
-│   ├── routes/
-│   ├── models/
-│   └── controllers/
-├── screenshots/
-│   ├── demo1.png
-│   ├── demo2.png
-│   └── architecture.png
-├── docs/
-│   ├── API.md
-│   └── DEPLOYMENT.md
-└── presentation/
-    ├── pitch-deck.pdf
-    └── demo-video.mp4
-```
-
-## 💡 **Pro Tips for Hackathon README:**
-
-### **What Judges Look For:**
-- ✅ **Clear problem statement** and solution
-- ✅ **Professional presentation** with screenshots/videos
-- ✅ **Technical depth** showing what you built
-- ✅ **Business viability** and impact metrics
-- ✅ **Team member contributions** clearly defined
-
-### **Make It Stand Out:**
-- 📸 **Include GIFs** of your app in action
-- 📊 **Add diagrams** showing architecture/user flow  
-- 🎯 **Highlight hackathon track alignment** prominently
-- 💰 **Quantify impact** with specific numbers
-- 🚀 **Show scalability** and future potential
-
-### **Common Mistakes to Avoid:**
-- ❌ Generic descriptions without specifics
-- ❌ Missing installation/setup instructions
-- ❌ No demo video or screenshots
-- ❌ Unclear team member roles
-- ❌ Not mentioning hackathon tracks specifically
+Built with ❤️ for HackGT 2025 using Cedar OS technology.
 
 ---
 
-**Save this template and start filling it out as you build!** 
-
-Good documentation can be the difference between winning and losing. 🏆
+**Note**: Remember to add your OpenAI API key to the `.env.local` file for the application to function properly.
