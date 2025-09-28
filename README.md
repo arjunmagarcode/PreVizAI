@@ -4,7 +4,7 @@
 **HackGT 2025 – Cedar OS Sponsor Track**  
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-![Cedar OS](https://img.shields.io/badge/Cedar%20OS-Voice%20AI-purple?style=for-the-badge)
+![Cedar OS]([https://img.shields.io/badge/Cedar%20OS-Voice%20AI-purple?style=for-the-badge](https://www.cedar.com/kora-ai-voice-agent/))
 [![OpenAI GPT-4](https://img.shields.io/badge/OpenAI-GPT--4-green?style=for-the-badge&logo=openai)](https://openai.com/)
 
 🏆 **Submission Complete**
@@ -75,7 +75,7 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 
 ### 1️⃣ Clone & Install
 
-```bash
+``bash
 # Clone the repository
 git clone <repository-url>
 cd PreVizAI   # or the folder name where you cloned the repo
