@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell, Users, Send, ArrowLeft, CheckCircle, Clock, AlertCircle, Eye
 } from "lucide-react";
@@ -30,6 +30,17 @@ interface Notification {
 export default function DoctorDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Generate unique IDs safely to avoid duplicate React keys
+  const makeId = () => {
+    if (typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto) {
+      return window.crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  };
+
+  // Keep track of which completed patientId we have already processed
+  const processedCompleted = useRef<Set<string>>(new Set());
 
   const [patients, setPatients] = useState<Patient[]>([
     {
@@ -79,10 +90,12 @@ export default function DoctorDashboard() {
   const reportIdFromQuery = searchParams.get("reportId");
 
   useEffect(() => {
-    if (completedParam === "completed" && completedPatientId) {
+    if (completedParam === "completed" && completedPatientId && !processedCompleted.current.has(completedPatientId)) {
       const p = patients.find((x) => x.id === completedPatientId);
       if (p) {
-        // Ensure patient is marked completed
+        // Ensure this completion is only processed once per patientId
+        processedCompleted.current.add(completedPatientId);
+
         if (p.status !== "completed") {
           setPatients((prev) =>
             prev.map((pt) =>
@@ -93,15 +106,13 @@ export default function DoctorDashboard() {
           );
         }
 
-        // If a reportId was provided, store it
         if (reportIdFromQuery) {
           setReportMap((prev) => ({ ...prev, [p.id]: reportIdFromQuery }));
         }
 
-        // Add a notification
         setNotifications((prev) => [
           {
-            id: Date.now().toString(),
+            id: makeId(),
             message: `${p.name} completed pre-appointment intake`,
             timestamp: new Date().toISOString(),
             type: "completed",
@@ -110,10 +121,8 @@ export default function DoctorDashboard() {
           ...prev,
         ]);
 
-        // Show toast
         setToast({ show: true, text: `Intake complete for ${p.name}` });
 
-        // Clean the URL after a few seconds (avoids re-trigger on refresh)
         const t = setTimeout(() => {
           setToast(null);
           router.replace(window.location.pathname);
@@ -125,16 +134,19 @@ export default function DoctorDashboard() {
 
   const sendIntakeRequest = async (patientId: string) => {
     try {
+      // Find patient first to carry context into navigation
+      const patient = patients.find((p) => p.id === patientId);
+
+      // Simulate network delay then update local state
       await new Promise((r) => setTimeout(r, 600));
       setPatients((prev) =>
         prev.map((p) => (p.id === patientId ? { ...p, status: "pending" } : p))
       );
 
-      const patient = patients.find((p) => p.id === patientId);
       if (patient) {
         setNotifications((prev) => [
           {
-            id: Date.now().toString(),
+            id: makeId(),
             message: `Intake request sent to ${patient.name}`,
             timestamp: new Date().toISOString(),
             type: "sent",
@@ -142,6 +154,16 @@ export default function DoctorDashboard() {
           },
           ...prev,
         ]);
+
+        // Navigate directly to the patient intake with context
+        router.push(
+          `/patient?pid=${encodeURIComponent(patient.id)}&name=${encodeURIComponent(
+            patient.name
+          )}`
+        );
+      } else {
+        // Fallback navigation without name if patient not found
+        router.push(`/patient?pid=${encodeURIComponent(patientId)}`);
       }
     } catch {
       alert("Failed to send intake request. Please try again.");
@@ -251,6 +273,20 @@ export default function DoctorDashboard() {
                             </Link>
                           )}
 
+                          {/* If completed but no report yet, still show a disabled button (placeholder). */}
+                          {patient.status === "completed" && !reportId && (
+                            <button
+                              type="button"
+                              disabled
+                              className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-gray-200 text-gray-500 cursor-not-allowed"
+                              aria-disabled
+                              title="Report not available yet"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1" />
+                              View Report
+                            </button>
+                          )}
+
                           {/* Small “Intake complete” pill for freshly completed patient */}
                           {isHighlighted && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
@@ -316,8 +352,8 @@ export default function DoctorDashboard() {
                         </p>
                         <div
                           className={`inline-block px-2 py-1 rounded-full text-xs mt-2 ${n.type === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-blue-100 text-blue-800"
                             }`}
                         >
                           {n.type === "completed" ? "Completed" : "Sent"}

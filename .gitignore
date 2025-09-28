@@ -95,3 +95,101 @@ test-results/
 
 # Package archives
 *.tgz
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+backend/integration/.venv/
+
+# Python packaging/build
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+wheels/
+share/python-wheels/
+.pybuilder/
+build/
+# dist/ already listed above
+
+# Python caches and tooling
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache/
+pytestdebug.log
+pip-wheel-metadata/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS/Linux extras
+*.swp
+*.swo
+
+# Keep important backend assets tracked
+# (do NOT ignore prompt files or example EMR JSON)
+!backend/integration/LLM_Prompts/
+!backend/integration/exampleEMR.json
+
+# Next.js additional caches
+.swc/
+
+# Editor history plugins
+.history/
+
+# Temp files and folders
+.tmp/
+.tmp/**
+.tmp_* 
+TMP/
+tmp/
+Temp/
+temp/
+*.tmp
+
+# Databases and data dumps
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.sql
+
+# CSV and large data (limit to backend data folders)
+backend/integration/data/**/*.csv
+backend/integration/data/**/*.tsv
+backend/integration/data/**/*.parquet
+
+# Backend outputs and artifacts
+backend/integration/output/
+backend/integration/outputs/
+backend/integration/outputs/**
+backend/integration/reports/
+backend/integration/reports/**
+backend/integration/transcripts/
+backend/integration/transcripts/**
+backend/integration/logs/
+backend/integration/logs/**
+
+# Backend local env
+backend/.env
+backend/integration/.env
+
+# Sentry/coverage artifacts (python)
+htmlcov/
+coverage.xml
+
+# Compiled native extensions (python)
+*.pyd
+*.pyo

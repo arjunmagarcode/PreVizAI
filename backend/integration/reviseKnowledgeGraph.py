@@ -1,5 +1,4 @@
 # reviseKnowledgeGraph.py
-
 import json
 from neo4j import GraphDatabase
 from openai import OpenAI
@@ -9,14 +8,12 @@ from dotenv import load_dotenv
 # -----------------------------
 # PATH CONFIGURATION
 # -----------------------------
-LLM_PROMPTS_DIR = "LLM_Prompts"
-MOCK_DATA_DIR = "Mock_Patient_Information"
-
-EXAMPLE_GRAPH_JSON = os.path.join(MOCK_DATA_DIR, "exampleKnowledgeGraph.json")
-EXAMPLE_EMR_JSON = os.path.join(MOCK_DATA_DIR, "exampleEMR.json")
-EXAMPLE_TRANSCRIPT_TXT = os.path.join(MOCK_DATA_DIR, "exampleTranscript.txt")
-
+BASE_DIR = os.path.dirname(__file__)
+LLM_PROMPTS_DIR = os.path.join(BASE_DIR, "LLM_Prompts")
 NODE_CONTEXT_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "nodeContextSummarizationPrompt.txt")
+
+# Base dir and example EMR path (exported)
+EXAMPLE_EMR_JSON = os.path.join(BASE_DIR, "exampleEMR.json")
 
 # -----------------------------
 # LLM CONFIGURATION
@@ -29,7 +26,7 @@ client = OpenAI(api_key=api_key)
 # GRAPH CONFIGURATION
 # -----------------------------
 NEO4J_URI = "bolt://localhost:7687"
-NEO4J_AUTH = ("neo4j", "Ch8ss+P1ano!")
+NEO4J_AUTH = ("neo4j", os.getenv("NEO4J_PASSWORD"))
 
 NODE_COLORS = {
     "Symptom": "#007BFF",
@@ -75,7 +72,7 @@ def annotate_graph_manual(graph_data, emr_data, transcript):
 
 def annotate_graph_llm(graph_data, emr_data, transcript):
     """Generate LLM-driven summaries for each node."""
-    with open(NODE_CONTEXT_PROMPT_PATH, "r") as f:
+    with open(NODE_CONTEXT_PROMPT_PATH, "r", encoding="utf-8") as f:
         prompt_template = f.read()
 
     for node in graph_data.get("nodes", []):
@@ -93,7 +90,7 @@ def annotate_graph_llm(graph_data, emr_data, transcript):
                                 .replace("{TRANSCRIPT}", transcript)
 
         response = client.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -155,17 +152,70 @@ def update_graph(graph_data):
             )
 
 
-def revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file):
-    """Full pipeline to revise knowledge graph with manual and LLM context."""
-    with open(graph_json_file, "r") as f:
-        graph_data = json.load(f)
-    with open(emr_json_file, "r") as f:
-        emr_data = json.load(f)
-    with open(transcript_txt_file, "r") as f:
-        transcript = f.read()
+def export_frontend_json(graph_data, output_path):
+    """Export frontend-ready JSON including context and llm_summary."""
+    frontend_graph = {
+        "nodes": [],
+        "edges": graph_data.get("edges", [])
+    }
+
+    for node in graph_data.get("nodes", []):
+        frontend_graph["nodes"].append({
+            "id": node.get("name"),
+            "type": node.get("type"),
+            "size": node.get("size", BASE_SIZE),
+            "color": NODE_COLORS.get(node.get("type"), "#cccccc"),
+            "context": node.get("context", {}),
+            "llm_summary": node.get("llm_summary", "")
+        })
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(frontend_graph, f, indent=2, ensure_ascii=False)
+
+
+# New flexible loaders to support file paths, JSON objects/strings, and raw text
+def _load_json_input(value, label):
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, (str, os.PathLike)):
+        path_str = str(value)
+        if os.path.exists(path_str):
+            with open(path_str, "r") as f:
+                return json.load(f)
+        try:
+            return json.loads(path_str)
+        except Exception as e:
+            raise TypeError(f"{label} must be a path to a JSON file or a JSON object/string. Got: {type(value).__name__}") from e
+    raise TypeError(f"{label} must be a path to a JSON file or a JSON object/string. Got: {type(value).__name__}")
+
+
+def _load_text_input(value, label):
+    if isinstance(value, str):
+        if os.path.exists(value):
+            with open(value, "r") as f:
+                return f.read()
+        return value
+    raise TypeError(f"{label} must be a path to a text file or a string. Got: {type(value).__name__}")
+
+
+def revise_knowledge_graph(graph_json_file, emr_json_file, transcript_txt_file, frontend_output=None):
+    """Full pipeline to revise knowledge graph with manual and LLM context.
+
+    Accepts either file paths or in-memory data:
+    - graph_json_file: path to JSON file, JSON dict/list, or JSON string
+    - emr_json_file: path to JSON file, JSON dict/list, or JSON string
+    - transcript_txt_file: path to text file or raw transcript string
+    - frontend_output: optional path to write a frontend-ready JSON
+    """
+    graph_data = _load_json_input(graph_json_file, "graph_json_file")
+    emr_data = _load_json_input(emr_json_file, "emr_json_file")
+    transcript = _load_text_input(transcript_txt_file, "transcript_txt_file")
 
     annotated_graph = annotate_graph_manual(graph_data, emr_data, transcript)
     annotated_graph = annotate_graph_llm(annotated_graph, emr_data, transcript)
     update_graph(annotated_graph)
+
+    if frontend_output:
+        export_frontend_json(annotated_graph, frontend_output)
 
     return annotated_graph
