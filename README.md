@@ -1,206 +1,185 @@
-# PreVizAI - AI-Powered Patient Intake System
+<div align="center">
 
-A modern healthcare web application built with Next.js and Cedar OS for HackGT's Cedar OS sponsor track. This application streamlines pre-appointment patient intake through voice-powered AI conversations, allowing patients to describe their symptoms naturally and providing doctors with comprehensive intake reports.
+# PreVizAI: AI-Powered Patient Intake System 🎙️   
 
-## 🎯 Features
+[![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Cedar OS](https://img.shields.io/badge/Cedar%20OS-Voice%20AI-purple?style=for-the-badge)](https://www.ycombinator.com/companies/cedar)
+[![OpenAI GPT-5](https://img.shields.io/badge/OpenAI-GPT--5-green?style=for-the-badge&logo=openai)](https://openai.com/)
 
-- **Voice-Powered Patient Intake**: Natural conversation with AI using Cedar OS voice capabilities
-- **Doctor Dashboard**: Manage patients, send intake requests, and review reports
-- **AI-Generated Medical Reports**: Structured summaries of patient conversations with key insights and suggested next-steps.
-- **Knowledge Graph Visualization**: A graphical visualization of patients' symptoms, treatments, and condition using nodes.
-- **Professional Healthcare UI**: Clean, accessible design following medical UI best practices
-- **HIPAA-Mindful Data Handling**: Secure conversation storage and processing
+🏆 **Submission Complete**
 
-## 🏗️ Application Flow
+</div>
 
-1. **Doctor Dashboard**: Doctor sends pre-appointment AI intake request to patient
-2. **Patient Interface**: Patient receives notification and starts voice conversation with AI
-3. **AI Conversation**: Natural dialogue where AI asks follow-up questions about symptoms
-4. **Report Generation**: Conversation is processed into structured medical report
-5. **Doctor Review**: Doctor receives notification and can view comprehensive patient report
+---
+
+## 🔗 Demo Links
+- **Live Demo:** [Add deployed site link here]
+- **Video Walkthrough:** [Add demo video link here]
+- **Presentation Slides:** [Add link to slides]
+
+---
+
+## ✨ Project Vision
+PreVizAI is a modern, HIPAA-conscious healthcare web application built with Next.js and Cedar OS Voice Capabilities, designed to streamline and transform pre-appointment patient intake through natural, voice-powered AI interactions.
+
+**The Problem**  
+Traditional patient intake relies on long, static forms—slow and often incomplete. Doctors spend 15+ minutes on repetitive questions, risking misdiagnosis and frustrating patients.
+
+**Our Solution**  
+PreVizAI replaces traditional forms with a natural, voice-powered patient intake experience. Using Cedar OS Voice Capabilities, patients can speak freely while the interface guides them through a conversational workflow. Responses are captured and structured into a medical report, giving doctors a clear, organized summary before the appointment. Some AI-powered follow-ups are handled by GPT-5, enhancing the conversation with smart, context-aware questions where needed.
+
+---
+
+## 🎯 Key Features & Cedar OS Integration
+
+| Feature | Description | Cedar OS / AI Technology | Impact for Healthcare Providers |
+|--------|-------------|--------------------------|----------------------------------|
+| **Voice-Powered Intake** | Patients describe symptoms naturally in a clean interface. | Cedar OS (real-time Speech-to-Text & AI voice synthesis) | Captures rich, natural data and improves accessibility. |
+| **AI-Generated Medical Reports** | Converts conversations into structured reports with chief complaint, history, and key insights. | OpenAI GPT-4 API | Saves clinician time and provides ready-to-use clinical insight. |
+| **Doctor Dashboard** | Central hub to send intake requests and review reports. | Next.js / TypeScript | Streamlines workflow and highlights high-priority patients. |
+| **Knowledge Graph Visualization (optional)** | Visual graph of symptoms, conditions, and treatments. | Neo4j Graph DB | Reveals complex clinical connections for advanced diagnostics. |
+| **HIPAA-Mindful Design** | Secure handling of sensitive data. | Flask Backend + Secure Architecture | Ensures compliance and builds patient trust. |
+
+---
+
+## 🏗️ Application Flow: From Request to Report
+1. **Doctor Action 👨‍⚕️** – Doctor sends a pre-visit intake request from the `/doctor` dashboard.  
+2. **Patient Interface 📲** – Patient opens `/patient` and begins the Cedar OS-powered voice dialogue.  
+3. **AI Conversation 🗣️** – Cedar OS transcribes speech; GPT-4 asks smart follow-ups (duration, severity, history, red flags).  
+4. **Report Generation 📝** – Flask backend turns the transcript into a structured **Medical Report**.  
+5. **Doctor Review ✅** – Doctor reviews the report before the appointment, reducing visit time and improving accuracy.
+
+---
+
+## 💻 Tech Stack & Architecture
+
+| Area | Technology | Reason |
+|------|-----------|-------|
+| **Frontend** | Next.js 15, TypeScript, Tailwind CSS | Fast, server-rendered, type-safe web app. |
+| **Core UI** | Cedar OS Components, Lucide React Icons | Accessible, professional healthcare UI. |
+| **Voice & AI** | Cedar OS SDK, OpenAI GPT-4 API | High-fidelity voice interaction + world-class language processing. |
+| **Backend** | Flask (Python API) | Lightweight and flexible for AI/ML logic & secure data processing. |
+| **Database (optional)** | Neo4j | Ideal for representing complex symptom-condition relationships. |
+
+---
 
 ## 🚀 Quick Start & Installation
 
 ### Prerequisites
+- Node.js 18+ & npm  
+- Python 3.11+ & pip  
+- **OpenAI API Key**  
+- Git  
+- Neo4j (optional for Knowledge Graph)
 
-- Node.js 18+ and npm
-- Python 3.11+
-- OpenAI API key
-- Neo4j Database (optional, for advanced knowledge graph features)
+### 1️⃣ Clone & Install
+```bash
+# Clone the repository
+git clone <repository-url>
+cd PreVizAI   # or the folder name where you cloned the repo
 
-### Installation Steps
+# Install frontend dependencies
+npm install
 
-1. **Install frontend dependencies:**
-   ```bash
-   npm install
-   ```
+# (Optional) Create Python virtual environment
+python3 -m venv .venv
 
-2. **Python backend is already configured with virtual environment**
-   - All Python dependencies are installed: Flask, OpenAI, Neo4j driver, etc.
-   - Virtual environment is located at `.venv/`
+# macOS / Linux
+source .venv/bin/activate
+# Windows (PowerShell)
+# .venv\Scripts\Activate.ps1
 
-3. **Configure environment variables:**
-
-   **Frontend (.env.local):**
-   ```env
-   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
-   NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
-   ```
-
-   **Backend (backend/.env):**
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   NEO4J_URI=bolt://localhost:7687
-   NEO4J_USER=neo4j
-   NEO4J_PASSWORD=your_neo4j_password_here
-   FLASK_ENV=development
-   FLASK_DEBUG=True
-   ```
-
-### Running the Application
-
-1. **Start the backend server:**
-   ```bash
-   cd backend
-   python run_server.py
-   ```
-   Backend available at: `http://localhost:5000`
-
-2. **Start the frontend (in a new terminal):**
-   ```bash
-   npm run dev
-   ```
-   Frontend available at: `http://localhost:3000`
-
-## 🔧 Architecture & Tech Stack
-
-- **Frontend**: Next.js 15, TypeScript, Tailwind CSS, Cedar OS
-- **Backend**: Flask Python API with AI processing
-- **Voice**: Cedar OS with OpenAI GPT-4 integration
-- **Database**: Neo4j (optional for knowledge graphs)
-- **AI**: OpenAI API for conversation processing and report generation
-
-## 🚀 Technology Stack
-
-- **Next.js 15** with App Router and TypeScript
-- **Cedar OS** for voice integration and AI conversations
-- **OpenAI GPT-4** for conversation processing and report generation
-- **Tailwind CSS** for responsive styling
-- **Lucide React** for professional icons
-
-## 📋 Prerequisites
-
-- Python 3.11+ and pip
-- Virtual environment tool (recommended: `venv`)
-- Node.js 18+ 
-- npm or yarn
-- OpenAI API key
-- Neo4j Desktop or Neo4j Aura account
-- Git (for cloning the repository)
-
-## 🛠️ Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd previz
-   ```
-2. **Install backend Python dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Install frontend Node.js dependencies**
-   ```bash
-   npm install
-   ```
-4. **Set up environment variables**
-   Create a .env.local file in the root directory
-   ```bash
-   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
-   ```
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-6. **Open your browser**
-  Navigate to https://localhost:3000
-
-## 🎮 Usage
-
-### For Doctors:
-1. Visit `/doctor` to access the dashboard
-2. View upcoming appointments and patient statuses
-3. Send intake requests to patients who need pre-appointment screening
-4. Review completed intake reports with structured medical information
-
-### For Patients:
-1. Visit `/patient` to start the intake process
-2. Click the microphone button to begin voice conversation
-3. Describe your main health concerns naturally
-4. Answer follow-up questions from the AI assistant
-5. Complete and submit your intake when finished
-
-## 🏥 Medical Report Structure
-
-The AI generates structured reports including:
-- Chief complaint in patient's own words
-- Symptoms, duration, and severity
-- Triggers and relieving factors
-- Medical history and current medications
-- Red flag symptoms requiring immediate attention
-- Functional impact on daily activities
-- Recommended follow-up actions
-
-## 🔧 Cedar OS Integration
-
-This application leverages Cedar OS for:
-- Voice permission management
-- Real-time speech-to-text conversion
-- AI voice synthesis for responses
-- Message store management
-- Seamless conversation flow
-
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── chat/          # OpenAI conversation endpoint
-│   │   └── generate-report/ # Report generation endpoint
-│   ├── doctor/            # Doctor dashboard
-│   ├── patient/           # Patient intake interface
-│   └── page.tsx           # Homepage with navigation
-├── components/
-│   └── providers.tsx      # Cedar OS provider configuration
+# Install backend dependencies
+pip install -r backend/requirements.txt
 ```
 
-## 🔒 Security & Privacy
+### 2️⃣ Configure Environment Variables
+Create the following files and add your credentials.
 
-- Voice data is processed securely through Cedar OS
-- Conversations are stored temporarily for report generation
-- Medical data handling follows HIPAA-mindful practices
-- API endpoints include proper error handling and validation
+**Frontend — `.env.local` (in the repo root):**
+```ini
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+```
 
-## 🚧 Development
+**Backend — `backend/.env`:**
+```ini
+OPENAI_API_KEY=your_openai_api_key_here
+# Neo4j settings are optional if you are not using the Knowledge Graph
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your_neo4j_password_here
+FLASK_ENV=development
+FLASK_DEBUG=True
+```
 
-This project was built for HackGT 2025 as part of the Cedar OS sponsor track. It demonstrates the power of voice-enabled AI in healthcare applications.
+> **Security note:** Never commit `.env.local` or `backend/.env`. Add them to `.gitignore`.
 
-### Key Development Features:
-- TypeScript for type safety
-- Responsive design for all device types
-- Error handling for voice permissions
-- Professional medical UI components
-- Real-time conversation display
+### 3️⃣ Run the App
+Open **two terminals**.
 
-## 📄 License
+**Backend**
+```bash
+cd backend
+# activate virtualenv if you created one
+# source .venv/bin/activate   (macOS/Linux)
+python run_server.py
+# Backend running at: http://localhost:5000
+```
 
-This project is part of HackGT 2025 submission for the Cedar OS sponsor track.
-
-## 🤝 Contributing
-
-Built with ❤️ for HackGT 2025 using Cedar OS technology.
+**Frontend**
+```bash
+# from repo root (where package.json lives)
+npm run dev
+# Frontend running at: http://localhost:3000
+```
 
 ---
 
-**Note**: Remember to add your OpenAI API key to the `.env.local` file for the application to function properly.
+## 🎮 Usage Guide
+
+### For Doctors
+Visit: [http://localhost:3000/doctor](http://localhost:3000/doctor)  
+- Send intake requests to patients.  
+- Review completed reports and explore the Knowledge Graph (if enabled).
+
+### For Patients
+Visit: [http://localhost:3000/patient](http://localhost:3000/patient)  
+- Click the microphone to start Cedar OS voice intake.  
+- Describe symptoms naturally and answer follow-up questions.  
+- Submit when finished — doctor receives the report.
+
+---
+
+## 📄 Medical Report Structure
+The AI generates a structured document that includes:
+
+- **Chief Complaint** – patient’s primary concern in their own words  
+- **History of Present Illness (HPI)** – duration, severity, onset, context  
+- **Triggers & Relieving Factors** – diagnostic clues  
+- **Medical History & Medications**  
+- **Red Flag Symptoms** – urgent warning signs  
+- **Functional Impact** – effect on daily life  
+- **Recommended Follow-up Actions** – suggested next steps  
+
+---
+
+## 👥 Team
+- **Arjun Pun Magar** – Frontend & Cedar OS Integration  
+- **Vinh Pham** – Backend & Flask API ( Neo4j Graph Visualization)  
+- **Om Nepal** – AI Prompt Engineering / Medical Report Design  
+- **Jonathan Navarro** –  Project Manager 
+
+---
+
+## 🙏 Acknowledgements
+Special thanks to the Cedar OS team for providing the voice SDK and support during HackGT.
+
+---
+
+## 📜 License
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+---
+
+<div align="center">Built with ❤️ for HackGT 2025</div>
