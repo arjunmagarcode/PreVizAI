@@ -15,7 +15,7 @@
 ## 🔗 Demo Links
 - **Live Demo:** 
 - **Video Walkthrough:** 
-- **Presentation Slides:** 
+- **Presentation Slides:** https://www.canva.com/design/DAG0PMTlN1M/--Wk7pzBHFquarNAlv8BEA/edit?utm_content=DAG0PMTlN1M&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
 ---
 
