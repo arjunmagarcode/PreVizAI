@@ -7,11 +7,16 @@ import {
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
-// Cedar hooks
+import KnowledgeGraph from "@/components/KnowledgeGraph";
+
+// Cedar hooks (still used for state/context publishing)
 import { useRegisterState, useCedarStore } from "cedar-os";
 
-// Cedar helper we just added
-import { explainEmrInsight, findEmrEvidence } from "@/cedar/agents/emrExplain";
+// EMR helper (kept for finding relevant refs)
+import { findEmrEvidence } from "@/cedar/agents/emrExplain";
+
+// NEW: OpenAI explain helper
+import { explainInsightWithLLM } from "@/lib/explainInsight";
 
 interface Patient {
   id: string;
@@ -73,6 +78,16 @@ function EvidenceDrawer({
   cedarAvailable: boolean;
 }) {
   if (!open) return null;
+
+  // Keep paragraph formatting for the answer
+  const paragraphAnswer =
+    (cedarAnswer || "")
+      .replace(/^\s*[-•]\s*/gm, "")
+      .replace(/\n{2,}/g, "\n")
+      .replace(/\n/g, " ")
+      .replace(/\s\s+/g, " ")
+      .trim();
+
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -89,22 +104,21 @@ function EvidenceDrawer({
 
         <div className="p-4 space-y-5 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-600">Ask Cedar for a quick rationale</div>
+            <div className="text-xs text-gray-600">Ask Why/How to AI</div>
             <button
               onClick={onAskCedar}
               disabled={!cedarAvailable || cedarBusy}
               className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded text-xs ${cedarAvailable ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
-              title={cedarAvailable ? "Ask Copilot (Cedar)" : "Cedar LLM not initialized"}
+              title={cedarAvailable ? "Ask Copilot" : "AI not initialized"}
             >
-              {/* icon-only per your request */}
               <Sparkles className="h-4 w-4" />
             </button>
           </div>
 
           {cedarAnswer && (
-            <div className="rounded border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900 whitespace-pre-wrap">
-              {cedarAnswer}
+            <div className="rounded border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+              {paragraphAnswer}
             </div>
           )}
 
@@ -187,36 +201,27 @@ export default function DoctorDashboard() {
   const [openReport, setOpenReport] = useState<ReportPayload | null>(null);
   const [tab, setTab] = useState<"summary" | "emr" | "graph">("summary");
 
-  // Drawer + Cedar state
+  // Drawer + AI state
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [emrHits, setEmrHits] = useState<{ path: string; value: string }[]>([]);
   const [cedarAnswer, setCedarAnswer] = useState<string | null>(null);
   const [cedarBusy, setCedarBusy] = useState(false);
 
-  // Cedar store
+  // Cedar store (kept for context publishing, optional)
   const cedarStore: any = useCedarStore();
-  const cedarCallLLM = cedarStore?.llm?.callLLM || cedarStore?.callLLM || null;
-  const cedarAvailable = Boolean(cedarCallLLM);
+  const cedarAvailable = true; // Always allow button since we use OpenAI route
 
-  // Publish to Cedar agent context (so the copilot sees current selection & emr)
-  useRegisterState({
-    key: "selectedText",
-    value: selectedText,
-    description: "Doctor-selected EMR insight text for explanation",
-  });
+  // Publish selected text & emr slice (Cedar context)
+  useRegisterState({ key: "selectedText", value: selectedText, description: "Doctor-selected EMR insight text" });
   const emrSlice = useMemo(() => openReport?.emr_tab || {}, [openReport]);
-  useRegisterState({
-    key: "emrData",
-    value: emrSlice,
-    description: "Report EMR data for Cedar context",
-  });
+  useRegisterState({ key: "emrData", value: emrSlice, description: "Report EMR data for context" });
 
   const completedParam = searchParams.get("intake");
   const completedPatientId = searchParams.get("patientId");
   const reportIdFromQuery = searchParams.get("reportId");
 
-  // Map latest reports from localStorage into reportMap once
+  // Load reports from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     const map: Record<string, { reportId: string; createdAt: number }> = {};
@@ -337,7 +342,6 @@ export default function DoctorDashboard() {
     }
   }
 
-  /** Open the drawer for a specific EMR insight (icon click) */
   function openExplainFor(text: string) {
     if (!openReport) return;
     setSelectedText(text);
@@ -346,16 +350,14 @@ export default function DoctorDashboard() {
     setDrawerOpen(true);
   }
 
-  /** Ask Cedar (or fallback) via our helper */
   async function onAskCedar() {
     if (!openReport) return;
     setCedarBusy(true);
     try {
-      const { answer, hits } = await explainEmrInsight(cedarStore, selectedText, openReport.emr_tab || {});
-      setEmrHits(hits);
+      const { answer } = await explainInsightWithLLM(selectedText, emrHits);
       setCedarAnswer(answer);
     } catch {
-      setCedarAnswer("Unable to get an explanation right now.");
+      setCedarAnswer("Sorry—couldn’t generate an explanation right now.");
     } finally {
       setCedarBusy(false);
     }
@@ -365,7 +367,7 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* HEADER */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -685,8 +687,8 @@ export default function DoctorDashboard() {
                             <button
                               className="inline-flex items-center justify-center w-7 h-7 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
                               onClick={() => openExplainFor(text)}
-                              title="Ask Copilot"
-                              aria-label="Ask Copilot"
+                              title="Ask AI"
+                              aria-label="Ask AI"
                             >
                               <Sparkles className="h-4 w-4" />
                             </button>
@@ -764,11 +766,12 @@ export default function DoctorDashboard() {
                     <div className="px-5 py-4 border-b border-gray-100">
                       <h3 className="text-sm font-semibold text-gray-900">Annotated Graph</h3>
                     </div>
-                    <div className="p-5">
+                    <div className="p-5 h-[500px]"> {/* give it a fixed height so Cytoscape can render */}
                       {openReport.annotated_graph ? (
-                        <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-60">
-                          {JSON.stringify(openReport.annotated_graph, null, 2)}
-                        </pre>
+                        <KnowledgeGraph
+                          nodes={openReport.annotated_graph.nodes || []}
+                          edges={openReport.annotated_graph.edges || []}
+                        />
                       ) : (
                         <p className="text-sm text-gray-500">No graph provided.</p>
                       )}
@@ -786,7 +789,7 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Evidence drawer */}
+          {/* Evidence Drawer */}
           <EvidenceDrawer
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}
@@ -795,10 +798,10 @@ export default function DoctorDashboard() {
             onAskCedar={onAskCedar}
             cedarBusy={cedarBusy}
             cedarAnswer={cedarAnswer}
-            cedarAvailable={cedarAvailable}
+            cedarAvailable={true}
           />
         </>
-      )}
+      )};
     </div>
-  );
+  )
 }

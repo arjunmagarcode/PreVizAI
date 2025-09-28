@@ -9,7 +9,7 @@ export default function Home() {
           <div className="flex justify-center mb-6">
             <Stethoscope className="h-16 w-16 text-blue-600" />
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">PreViz</h1>
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">PreVizAI</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             AI-powered pre-appointment patient intake system. Streamline healthcare
             communication between patients and doctors.
