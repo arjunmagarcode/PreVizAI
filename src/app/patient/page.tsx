@@ -16,6 +16,9 @@ export default function PatientIntake() {
   const voiceStore: any = useCedarStore((s: any) => s.voice);
   const voice = useVoice();
 
+  const [isRecording, setIsRecording] = useState(false); // true when recording
+  const [canTalk, setCanTalk] = useState(true); // block until next assistant message
+
   useEffect(() => {
     const sid =
       typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -27,6 +30,15 @@ export default function PatientIntake() {
 
   const rawMessages = useCedarStore((s: any) => s?.messages?.items ?? s?.messages ?? []);
   const messages: any[] = useMemo(() => (Array.isArray(rawMessages) ? rawMessages : []), [rawMessages]);
+
+  // Reset canTalk whenever a new assistant message arrives
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role === "assistant") {
+      setCanTalk(true);
+    }
+  }, [messages]);
 
   function buildTranscriptString(msgs: any[]) {
     return msgs
@@ -61,6 +73,7 @@ export default function PatientIntake() {
   };
 
   const handleVoiceToggle = async () => {
+    if (!canTalk && !isRecording) return; // block if waiting for next AI message
     try {
       await voice.checkVoiceSupport?.();
       if (voice.voicePermissionStatus === "prompt") await voice.requestVoicePermission();
@@ -68,11 +81,22 @@ export default function PatientIntake() {
         alert("Please enable microphone permissions in your browser settings.");
         return;
       }
-      if (!voice.isListening) await voice.startListening();
-      else await voice.stopListening();
+
+      if (!isRecording) {
+        // start recording
+        setIsRecording(true);
+        setCanTalk(false); // block new recording until AI responds
+        await voice.startListening();
+      } else {
+        // stop recording
+        await voice.stopListening();
+        setIsRecording(false);
+      }
     } catch {
       alert("Microphone error. Please check your browser settings and try again.");
-      try { voice.resetVoiceState?.(); } catch { }
+      try { voice.resetVoiceState?.(); } catch {}
+      setIsRecording(false);
+      setCanTalk(true);
     }
   };
 
@@ -125,10 +149,11 @@ export default function PatientIntake() {
           <div className="bg-white rounded-xl shadow-lg p-6 h-fit">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Instructions</h2>
             <ol className="list-decimal list-inside space-y-3 text-sm text-gray-600">
-              <li>Click the microphone button to start</li>
-              <li>Speak your main health concern</li>
-              <li>Answer the AI&apos;s follow-up questions</li>
-              <li>Complete when ready</li>
+              <li>Make sure your microphone is enabled.</li>
+              <li>Click the blue button to begin, and speak your main health concern</li>
+              <li>Answer the AI&apos;s follow-up questions to better share your condition.</li>
+              <li>The process will repeat to obtain the most information. There is no limit to the number of questions asked</li>
+              <li>Click the green button when you feel you have adequately shared your condition.</li>
             </ol>
 
             <VoicePermissionHelper
@@ -144,25 +169,25 @@ export default function PatientIntake() {
 
           {/* Main Voice Interface */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-12 text-center min-h-[calc(100vh-90px)] flex flex-col justify-start">
-            <div className="flex flex-col justify-center items-center flex-1 mt-">
+            <div className="flex flex-col justify-center items-center flex-1 mt-5">
               {messages.length === 0 ? (
                 <>
                   <div className="flex justify-center mb-8">
                     <div
                       className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${
-                        voice?.isListening ? "bg-red-500 animate-pulse" : "bg-gray-200"
+                        isRecording ? "bg-red-500 animate-pulse" : "bg-blue-200"
                       }`}
                     >
-                      <Mic className={`w-12 h-12 ${voice?.isListening ? "text-white" : "text-gray-400"}`} />
+                      <Mic className={`w-12 h-12 ${isRecording ? "text-white" : "text-blue-600"}`} />
                     </div>
                   </div>
 
                   <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-                    {voice?.isListening ? "Listening..." : "Ready to start your intake"}
+                    {isRecording ? "Listening..." : "Ready to start your intake"}
                   </h2>
 
                   <p className="text-gray-600 mb-12">
-                    {voice?.isListening
+                    {isRecording
                       ? "Speak clearly about your health concerns"
                       : "Click the microphone to begin your conversation."}
                   </p>
@@ -191,18 +216,18 @@ export default function PatientIntake() {
               )}
 
               {/* Control Buttons */}
-              <div className="flex items-center justify-center gap-4 mt-40">
+              <div className="flex items-center justify-center gap-4 mt-32">
                 <button
                   onClick={handleVoiceToggle}
-                  disabled={!voice || voice.voicePermissionStatus === "denied"}
+                  disabled={!canTalk && !isRecording || !voice || voice.voicePermissionStatus === "denied"}
                   className={`flex items-center px-8 py-3 rounded-lg font-medium transition-all ${
-                    voice?.isListening
+                    isRecording
                       ? "bg-red-500 hover:bg-red-600 text-white"
                       : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
                   }`}
                 >
                   <Mic className="w-4 h-4 mr-2" />
-                  {voice?.isListening ? "Stop Recording" : "Click to speak"}
+                  {isRecording ? "Stop Recording" : "Click to speak"}
                 </button>
 
                 <button

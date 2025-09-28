@@ -248,7 +248,12 @@ export default function DoctorDashboard() {
       } catch { }
     }
     if (Object.keys(map).length > 0) {
-      setReportMap(Object.fromEntries(Object.entries(map).map(([pid, v]) => [pid, v.reportId])));
+      setReportMap((prev) => ({
+        ...prev,
+        ...Object.fromEntries(
+          Object.entries(map).map(([pid, v]) => [pid, v.reportId])
+        ),
+      }));
     }
   }, []);
 
