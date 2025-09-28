@@ -18,6 +18,14 @@ import { findEmrEvidence } from "@/cedar/agents/emrExplain";
 // NEW: OpenAI explain helper
 import { explainInsightWithLLM } from "@/lib/explainInsight";
 
+const typeColors: Record<string, string> = {
+  Symptom: "#007BFF",
+  Condition: "#D9534F",
+  Trigger: "#F0AD4E",
+  Cause: "#F0AD4E",
+  Medication: "#5CB85C"
+};
+
 interface Patient {
   id: string;
   name: string;
@@ -95,7 +103,7 @@ function EvidenceDrawer({
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <div>
             <div className="text-xs text-gray-500">Evidence for</div>
-            <div className="text-sm font-medium text-gray-900 line-clamp-2">{selectedText}</div>
+            <div className="text-sm font-semibold text-gray-900 line-clamp-2">{selectedText}</div>
           </div>
           <button onClick={onClose} className="p-2 rounded hover:bg-gray-100" aria-label="Close">
             <X className="h-5 w-5 text-gray-600" />
@@ -104,7 +112,7 @@ function EvidenceDrawer({
 
         <div className="p-4 space-y-5 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-600">Ask Why/How to AI</div>
+            <div className="text-xs text-gray-600">Ask for a quick rationale</div>
             <button
               onClick={onAskCedar}
               disabled={!cedarAvailable || cedarBusy}
@@ -123,9 +131,9 @@ function EvidenceDrawer({
           )}
 
           <div>
-            <div className="text-xs uppercase text-gray-500 mb-2">EMR REFERENCES</div>
+            <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 font-semibold">EMR References</div>
             {emrHits.length === 0 ? (
-              <div className="text-sm text-gray-600">No obvious EMR references.</div>
+              <div className="text-sm text-gray-700">No obvious EMR references.</div>
             ) : (
               <ul className="space-y-2">
                 {emrHits.map((e, i) => (
@@ -210,7 +218,7 @@ export default function DoctorDashboard() {
 
   // Cedar store (kept for context publishing, optional)
   const cedarStore: any = useCedarStore();
-  const cedarAvailable = true; // Always allow button since we use OpenAI route
+  const cedarAvailable = true; // Button enabled (OpenAI route used under the hood)
 
   // Publish selected text & emr slice (Cedar context)
   useRegisterState({ key: "selectedText", value: selectedText, description: "Doctor-selected EMR insight text" });
@@ -367,7 +375,7 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* HEADER */}
+      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -411,10 +419,10 @@ export default function DoctorDashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center flex-wrap gap-3 mb-2">
-                          <h3 className="font-medium text-gray-900">{patient.name}</h3>
+                          <h3 className="font-semibold text-gray-900">{patient.name}</h3>
                           <div className="flex items-center space-x-1">
                             {getStatusIcon(patient.status)}
-                            <span className="text-sm text-gray-600">{getStatusText(patient.status)}</span>
+                            <span className="text-sm text-gray-700">{getStatusText(patient.status)}</span>
                           </div>
 
                           {patient.status === "completed" && reportId && (
@@ -456,11 +464,13 @@ export default function DoctorDashboard() {
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Age: {patient.age}</p>
-                          <p>Appointment: {new Date(patient.appointmentDate).toLocaleString()}</p>
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <p><span className="font-semibold">Age:</span> {patient.age}</p>
+                          <p><span className="font-semibold">Appointment:</span> {new Date(patient.appointmentDate).toLocaleString()}</p>
                           {patient.chiefComplaint && (
-                            <p className="text-blue-600">Chief Complaint: {patient.chiefComplaint}</p>
+                            <p className="text-blue-700">
+                              <span className="font-semibold">Chief Complaint:</span> {patient.chiefComplaint}
+                            </p>
                           )}
                           {patient.lastIntake && (
                             <p className="text-gray-500 text-xs">
@@ -474,7 +484,7 @@ export default function DoctorDashboard() {
                         {patient.status === "needs_intake" && (
                           <button
                             onClick={() => sendIntakeRequest(patient.id)}
-                            className="flex items-center px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                           >
                             <Send className="h-4 w-4 mr-1" />
                             Send Intake
@@ -550,10 +560,10 @@ export default function DoctorDashboard() {
         <>
           <div className="fixed inset-0 z-40 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40" onClick={() => setOpenReport(null)} />
-            <div className="relative z-50 w-full max-w-3xl bg-white rounded-2xl shadow-2xl">
-              <div className="flex items-center justify-between px-5 py-4 border-b">
+            <div className="relative z-50 w-full max-w-4xl bg-white rounded-2xl shadow-2xl">
+              <div className="flex items-center justify-between px-6 py-5 border-b">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-xl font-bold text-gray-900 tracking-tight">
                     Report — {openReport.patientName || "Patient"}
                   </h3>
                   <p className="text-xs text-gray-500">
@@ -570,35 +580,41 @@ export default function DoctorDashboard() {
               </div>
 
               {/* Tabs */}
-              <div className="px-5 pt-3 flex items-center gap-2">
+              <div className="px-6 pt-3 flex items-center gap-2">
                 <button
                   onClick={() => setTab("summary")}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "summary" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${tab === "summary" ? "bg-blue-600 text-white" : "text-gray-800 hover:bg-gray-100"
+                    }`}
                 >
                   Summary
                 </button>
                 <button
                   onClick={() => setTab("emr")}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "emr" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${tab === "emr" ? "bg-blue-600 text-white" : "text-gray-800 hover:bg-gray-100"
+                    }`}
                 >
                   EMR Insights
                 </button>
                 <button
                   onClick={() => setTab("graph")}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "graph" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${tab === "graph" ? "bg-blue-600 text-white" : "text-gray-800 hover:bg-gray-100"
+                    }`}
                 >
                   Graph
                 </button>
               </div>
 
               {/* Body */}
-              <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+              <div className="p-6 space-y-6 max-h-[72vh] overflow-y-auto">
                 {tab === "summary" && (
                   <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="px-5 py-4 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-900">Visit Focus</h3>
+                    <div className="px-6 py-4 border-b border-gray-100">
+                      <h3 className="text-base font-bold text-gray-900">Visit Focus</h3>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Fast, scannable overview of today’s visit (AI-assisted).
+                      </p>
                     </div>
-                    <div className="p-5 space-y-4 text-sm text-gray-800">
+                    <div className="p-6 space-y-5 text-sm text-gray-900">
                       {(() => {
                         const sum = openReport.insights_report || {};
                         const vf = sum.visit_focus || {};
@@ -607,27 +623,37 @@ export default function DoctorDashboard() {
                         return (
                           <>
                             <div>
-                              <span className="font-medium">Chief complaint:</span>{" "}
-                              <span>{vf.chief_complaint || "Not stated"}</span>
+                              <span className="font-semibold">Chief Complaint:</span>{" "}
+                              <span className="text-gray-800">{vf.chief_complaint || "Not stated"}</span>
                             </div>
+
+                            {sum.concise_summary && (
+                              <div className="rounded-lg bg-gray-100 border border-gray-200 p-4">
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                  Concise Summary
+                                </div>
+                                <div className="text-gray-900">{sum.concise_summary}</div>
+                              </div>
+                            )}
+
                             <div>
-                              <span className="font-medium">Onset / duration / severity:</span>{" "}
-                              <span>{vf.onset_duration_severity || "Not stated"}</span>
+                              <span className="font-semibold">Onset / Duration / Severity:</span>{" "}
+                              <span className="text-gray-800">{vf.onset_duration_severity || "Not stated"}</span>
                             </div>
 
                             {(assoc.positives?.length || assoc.negatives?.length) && (
                               <div className="grid sm:grid-cols-2 gap-6">
                                 <div>
-                                  <div className="text-xs uppercase text-gray-500 mb-1">Associated ( + )</div>
-                                  <ul className="list-disc pl-5 space-y-1">
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Associated ( + )</div>
+                                  <ul className="list-disc pl-5 space-y-1 text-gray-900">
                                     {(assoc.positives || []).map((s, i) => (
                                       <li key={i}>{s}</li>
                                     ))}
                                   </ul>
                                 </div>
                                 <div>
-                                  <div className="text-xs uppercase text-gray-500 mb-1">Associated ( − )</div>
-                                  <ul className="list-disc pl-5 space-y-1">
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Associated ( − )</div>
+                                  <ul className="list-disc pl-5 space-y-1 text-gray-900">
                                     {(assoc.negatives || []).map((s, i) => (
                                       <li key={i}>{s}</li>
                                     ))}
@@ -638,8 +664,8 @@ export default function DoctorDashboard() {
 
                             {Array.isArray(sum.quick_checks) && sum.quick_checks.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Today’s Quick Checks</div>
-                                <ul className="list-disc pl-5 space-y-1">
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Today’s Quick Checks</div>
+                                <ul className="list-disc pl-5 space-y-1 text-gray-900">
                                   {sum.quick_checks.map((s: string, i: number) => (
                                     <li key={i}>{s}</li>
                                   ))}
@@ -649,19 +675,12 @@ export default function DoctorDashboard() {
 
                             {Array.isArray(sum.next_best_actions) && sum.next_best_actions.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Next Best Actions</div>
-                                <ul className="list-disc pl-5 space-y-1">
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Next Best Actions</div>
+                                <ul className="list-disc pl-5 space-y-1 text-gray-900">
                                   {sum.next_best_actions.map((s: string, i: number) => (
                                     <li key={i}>{s}</li>
                                   ))}
                                 </ul>
-                              </div>
-                            )}
-
-                            {sum.concise_summary && (
-                              <div className="rounded-lg bg-gray-50 p-3">
-                                <div className="text-xs uppercase text-gray-500 mb-1">Concise Summary</div>
-                                <div>{sum.concise_summary}</div>
                               </div>
                             )}
                           </>
@@ -673,10 +692,13 @@ export default function DoctorDashboard() {
 
                 {tab === "emr" && (
                   <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="px-5 py-4 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-900">EMR Insights</h3>
+                    <div className="px-6 py-4 border-b border-gray-100">
+                      <h3 className="text-base font-bold text-gray-900">EMR Insights</h3>
+                      <p className="text-xs text-gray-600 mt-1">
+                        AI-powered insights based on the patient’s EMR and conversation.
+                      </p>
                     </div>
-                    <div className="p-5 space-y-6 text-sm text-gray-800">
+                    <div className="p-6 space-y-6 text-sm text-gray-900">
                       {(() => {
                         const emr = openReport.emr_tab || {};
                         const rh = emr.relevant_history || {};
@@ -687,8 +709,8 @@ export default function DoctorDashboard() {
                             <button
                               className="inline-flex items-center justify-center w-7 h-7 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
                               onClick={() => openExplainFor(text)}
-                              title="Ask AI"
-                              aria-label="Ask AI"
+                              title="Ask Copilot"
+                              aria-label="Ask Copilot"
                             >
                               <Sparkles className="h-4 w-4" />
                             </button>
@@ -699,7 +721,7 @@ export default function DoctorDashboard() {
                           <>
                             {emr.risk_flags?.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Risk Flags</div>
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Risk Flags</div>
                                 <ul className="list-disc pl-5 space-y-2">
                                   {emr.risk_flags.map(iconOnlyAsk)}
                                 </ul>
@@ -708,7 +730,7 @@ export default function DoctorDashboard() {
 
                             {emr.trend_insights?.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Trend Insights</div>
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Trend Insights</div>
                                 <ul className="list-disc pl-5 space-y-2">
                                   {emr.trend_insights.map(iconOnlyAsk)}
                                 </ul>
@@ -717,7 +739,7 @@ export default function DoctorDashboard() {
 
                             {emr.care_gaps?.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Care Gaps</div>
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Care Gaps</div>
                                 <ul className="list-disc pl-5 space-y-2">
                                   {emr.care_gaps.map(iconOnlyAsk)}
                                 </ul>
@@ -727,7 +749,7 @@ export default function DoctorDashboard() {
                             {(rh.conditions?.length || rh.meds?.length || rh.allergies_alerts?.length) && (
                               <div className="grid sm:grid-cols-3 gap-4 pt-2">
                                 <div>
-                                  <div className="text-xs uppercase text-gray-500 mb-1">Conditions</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Conditions</div>
                                   <ul className="list-disc pl-5 space-y-1">
                                     {(rh.conditions || []).map((c: any, i: number) => {
                                       const t = `${c.name} — ${c.status}`;
@@ -736,7 +758,7 @@ export default function DoctorDashboard() {
                                   </ul>
                                 </div>
                                 <div>
-                                  <div className="text-xs uppercase text-gray-500 mb-1">Meds (relevant)</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Meds (relevant)</div>
                                   <ul className="list-disc pl-5 space-y-1">
                                     {(rh.meds || []).map((m: any, i: number) => {
                                       const t = `${m.name} — ${m.purpose}`;
@@ -745,7 +767,7 @@ export default function DoctorDashboard() {
                                   </ul>
                                 </div>
                                 <div>
-                                  <div className="text-xs uppercase text-gray-500 mb-1">Allergies / Alerts</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Allergies / Alerts</div>
                                   <ul className="list-disc pl-5 space-y-1">
                                     {(rh.allergies_alerts || []).map((a: string, i: number) => (
                                       <li key={i}>{a}</li>
@@ -766,12 +788,28 @@ export default function DoctorDashboard() {
                     <div className="px-5 py-4 border-b border-gray-100">
                       <h3 className="text-sm font-semibold text-gray-900">Annotated Graph</h3>
                     </div>
-                    <div className="p-5 h-[500px]"> {/* give it a fixed height so Cytoscape can render */}
+                    <div className="p-5 h-[500px]"> {/* fixed height for Cytoscape */}
                       {openReport.annotated_graph ? (
-                        <KnowledgeGraph
-                          nodes={openReport.annotated_graph.nodes || []}
-                          edges={openReport.annotated_graph.edges || []}
-                        />
+                        <>
+                          {/* Legend */}
+                          <div className="mb-4 flex gap-4 flex-wrap">
+                            {Object.entries(typeColors).map(([type, color]) => (
+                              <div key={type} className="flex items-center gap-2">
+                                <span
+                                  className="w-4 h-4 rounded-full"
+                                  style={{ backgroundColor: color }}
+                                />
+                                <span className="text-sm capitalize"
+                                  style={{ color: "#000000" }}>{type}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Graph */}
+                          <KnowledgeGraph
+                            nodes={openReport.annotated_graph.nodes || []}
+                            edges={openReport.annotated_graph.edges || []}
+                          />
+                        </>
                       ) : (
                         <p className="text-sm text-gray-500">No graph provided.</p>
                       )}
@@ -779,9 +817,11 @@ export default function DoctorDashboard() {
                   </div>
                 )}
 
-                <details className="mt-2">
-                  <summary className="text-sm text-gray-600 cursor-pointer">Show transcript</summary>
-                  <pre className="mt-2 text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-56">
+                <details className="mt-1">
+                  <summary className="text-sm font-semibold text-gray-800 cursor-pointer">
+                    Show Conversation Transcript
+                  </summary>
+                  <pre className="mt-3 text-sm bg-white border border-gray-200 p-4 rounded-lg overflow-auto max-h-56 text-gray-900">
                     {openReport.transcript || "No transcript captured."}
                   </pre>
                 </details>
@@ -789,7 +829,7 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Evidence Drawer */}
+          {/* Evidence drawer */}
           <EvidenceDrawer
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}
@@ -798,10 +838,10 @@ export default function DoctorDashboard() {
             onAskCedar={onAskCedar}
             cedarBusy={cedarBusy}
             cedarAnswer={cedarAnswer}
-            cedarAvailable={true}
+            cedarAvailable={cedarAvailable}
           />
         </>
-      )};
+      )}
     </div>
-  )
+  );
 }
