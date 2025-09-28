@@ -12,15 +12,12 @@ export default function PatientIntake() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Michael is the demo patient who completes intake
-  const patientId = searchParams.get("pid") ?? "2";
-  const patientName = searchParams.get("name") ?? "Michael Chen";
+  // Optional: get patient id/name from query, e.g. /patient?pid=2&name=Michael%20Chen
+  const patientId = searchParams.get("pid") ?? "1";
+  const patientName = searchParams.get("name") ?? "Patient";
 
   const voiceStore: any = useCedarStore((s: any) => s.voice);
   const voice = useVoice();
-
-  // --- NEW: persist the latest reportId in state so it survives re-renders
-  const [lastReportId, setLastReportId] = useState<string | null>(null);
 
   // Set the voice endpoint ONCE per page-load with a fresh session id (sid).
   useEffect(() => {
@@ -32,10 +29,16 @@ export default function PatientIntake() {
     return () => voiceStore?.resetVoiceState?.();
   }, [voiceStore]);
 
+  // Cedar messages (can be s.messages.items or s.messages)
   const rawMessages = useCedarStore((s: any) => s?.messages?.items ?? s?.messages ?? []);
   const messages: any[] = useMemo(() => (Array.isArray(rawMessages) ? rawMessages : []), [rawMessages]);
 
-  // Convert messages to a single transcript string
+  // const conversation = (Array.isArray(rawMessages) ? rawMessages : []).map((m: any) => ({
+  //   role: m.role === "assistant" ? "assistant" : "user",
+  //   content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+  // }));
+
+  // Turn [{role, content}] into a single string the Flask endpoint expects
   function buildTranscriptString(msgs: any[]) {
     return msgs
       .map(m => {
@@ -46,22 +49,21 @@ export default function PatientIntake() {
       .join("\n");
   }
 
+
+  // ✅ Button becomes clickable as soon as ANY message exists
   const canComplete = messages.length > 0;
+
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect AFTER we have both: completed=true and a reportId in state
+  // After showing the success screen, redirect to the doctor dashboard
   useEffect(() => {
-    if (!isCompleted || !lastReportId) return;
+    if (!isCompleted) return;
     const timer = setTimeout(() => {
-      router.push(
-        `/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}&reportId=${encodeURIComponent(
-          lastReportId
-        )}`
-      );
-    }, 900);
+      router.push(`/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}`);
+    }, 1200);
     return () => clearTimeout(timer);
-  }, [isCompleted, lastReportId, router, patientId]);
+  }, [isCompleted, router, patientId]);
 
   const handleRequestPermission = async () => {
     try {
@@ -81,7 +83,7 @@ export default function PatientIntake() {
         return;
       }
       if (!voice.isListening) await voice.startListening();
-      else await voice.stopListening();
+      else await voice.stopListening(); // triggers POST to /api/voice
     } catch {
       alert("Microphone error. Please check your browser settings and try again.");
       try { voice.resetVoiceState?.(); } catch { }
@@ -93,42 +95,30 @@ export default function PatientIntake() {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // Flask expects: { "transcript": "<string>" }
       body: JSON.stringify({ transcript }),
     });
     if (!res.ok) {
       const msg = await res.text().catch(() => "");
       throw new Error(`Backend error ${res.status}: ${msg}`);
     }
-    return res.json();
+    return res.json(); // { message, insights_report, next_steps, graph }
   }
 
+  // In your Complete Intake handler:
   const handleCompleteIntake = async () => {
-    if (messages.length === 0) return;
+    if (messages.length === 0) return;   // keep your “first turn disabled” rule
     setIsSubmitting(true);
     try {
       const transcript = buildTranscriptString(messages);
       const data = await sendTranscriptToFlask(transcript);
 
-      // Generate a reportId and SAVE it in state (critical!)
-      const reportId: string =
-        typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto
-          ? (window.crypto as any).randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      setLastReportId(reportId);
+      // For now, just see it working:
+      console.log("Report from Flask:", data);
 
-      // Store entire payload for Doctor’s modal (Summary + EMR + Graph + Transcript)
-      const stored = {
-        reportId,
-        patientId,
-        patientName,
-        createdAt: new Date().toISOString(),
-        transcript,
-        insights_report: data.insights_report || {},
-        next_steps: data.next_steps || [],
-        emr_tab: data.emr_tab || null,
-        annotated_graph: data.graph ?? null
-      };
-      localStorage.setItem(`report:${reportId}`, JSON.stringify(stored));
+      // Optional: stash it for the doctor page to read
+      // localStorage.setItem("latestReport", JSON.stringify(data));
+      // router.push(`/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}`);
 
       setIsCompleted(true);
     } catch (e: any) {
@@ -138,7 +128,9 @@ export default function PatientIntake() {
     }
   };
 
+
   if (isCompleted) {
+    // Quick success page while redirecting (kept for UX polish; router.push happens above)
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
@@ -151,65 +143,91 @@ export default function PatientIntake() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="text-gray-500 hover:text-gray-700">
-              <ArrowLeft className="h-6 w-6" />
-            </Link>
-            <h1 className="text-xl font-semibold text-gray-900">Patient Intake</h1>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {voice && <VoiceIndicator voiceState={voice} />}
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span>Voice Status:</span>
-              {voice?.voicePermissionStatus === "granted" && <span className="text-green-600 font-medium">Ready</span>}
-              {voice?.voicePermissionStatus === "denied" && <span className="text-red-600 font-medium">Denied</span>}
-              {voice?.voicePermissionStatus === "prompt" && <span className="text-yellow-600 font-medium">Prompt</span>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto p-4 grid md:grid-cols-3 gap-6 h-[calc(100vh-80px)]">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+  <div className="min-h-screen previz-bg">
+    <div className="max-w-6xl mx-auto p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Instructions Card */}
+        <div className="bg-white rounded-xl shadow-lg p-6 h-fit">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Instructions</h2>
-          <div className="space-y-4 text-sm text-gray-600">
-            <ol className="list-decimal list-inside space-y-2">
-              <li>Click the microphone button to start</li>
-              <li>Speak your main health concern</li>
-              <li>Answer the AI’s follow-up questions</li>
-              <li>Click Complete any time you’re ready</li>
-            </ol>
-            <VoicePermissionHelper
-              permissionStatus={voice?.voicePermissionStatus || "prompt"}
-              onRequestPermission={handleRequestPermission}
-            />
-            {voice?.voiceError && (
-              <p className="text-xs text-red-600 p-2 bg-red-50 rounded">Mic error: {String(voice.voiceError)}</p>
-            )}
-          </div>
+          <ol className="list-decimal list-inside space-y-3 text-sm text-gray-600">
+            <li>Click the microphone button to start</li>
+            <li>Speak your main health concern</li>
+            <li>Answer the AI&apos;s follow-up questions</li>
+            <li>Complete when ready</li>
+          </ol>
+
+          <VoicePermissionHelper
+            permissionStatus={voice?.voicePermissionStatus || "prompt"}
+            onRequestPermission={handleRequestPermission}
+          />
+          {voice?.voiceError && (
+            <p className="text-xs text-red-600 p-2 bg-red-50 rounded mt-4">
+              Mic error: {String(voice.voiceError)}
+            </p>
+          )}
         </div>
 
-        <div className="md:col-span-2 bg-white rounded-xl shadow-lg flex flex-col">
-          <div className="flex-1 p-6 overflow-y-auto">
-            {messages.length === 0 ? (
-              <div className="text-center text-gray-500 mt-12">
-                <Mic className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg mb-2">Ready to start your intake</p>
-                <p className="text-sm">Click the microphone to begin your conversation.</p>
+        {/* Main Interface */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Microphone Access Alert */}
+          {voice?.voicePermissionStatus !== "granted" && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center mt-0.5">
+                  <span className="text-yellow-800 text-xs font-bold">!</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-yellow-800 mb-1">Microphone Access Required</h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    This application needs access to your microphone to record your voice for the intake conversation.
+                  </p>
+                  <button
+                    onClick={handleRequestPermission}
+                    className="flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    Enable Microphone
+                  </button>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* Main Voice Interface */}
+          <div className="bg-white rounded-xl shadow-lg p-12 text-center min-h-[calc(100vh-90px)] flex flex-col justify-between">
+            {messages.length === 0 ? (
+              <>
+                <div className="flex justify-center mb-8">
+                  <div
+                    className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      voice?.isListening ? "bg-red-500 animate-pulse" : "bg-gray-200"
+                    }`}
+                  >
+                    <Mic className={`w-12 h-12 ${voice?.isListening ? "text-white" : "text-gray-400"}`} />
+                  </div>
+                </div>
+
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                  {voice?.isListening ? "Listening..." : "Ready to start your intake"}
+                </h2>
+
+                <p className="text-gray-600 mb-12">
+                  {voice?.isListening
+                    ? "Speak clearly about your health concerns"
+                    : "Click the microphone to begin your conversation."}
+                </p>
+              </>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 mb-8 max-h-[calc(100vh-400px)] overflow-y-auto">
+
                 {messages.map((m: any, idx: number) => (
                   <div key={idx} className={`flex ${m.role === "assistant" ? "justify-start" : "justify-end"}`}>
                     <div
-                      className={`max-w-[80%] p-4 rounded-lg ${m.role === "assistant"
-                        ? "bg-blue-100 text-blue-900 rounded-bl-none"
-                        : "bg-green-100 text-green-900 rounded-br-none"
-                        }`}
+                      className={`max-w-[80%] p-4 rounded-lg ${
+                        m.role === "assistant"
+                          ? "bg-blue-100 text-blue-900 rounded-bl-none"
+                          : "bg-green-100 text-green-900 rounded-br-none"
+                      }`}
                     >
                       <div className="text-xs font-medium mb-1 opacity-70">
                         {m.role === "assistant" ? "AI Assistant" : "You"}
@@ -222,44 +240,32 @@ export default function PatientIntake() {
                 ))}
               </div>
             )}
-          </div>
 
-          <div className="p-6 border-t bg-gray-50 rounded-b-xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={handleVoiceToggle}
-                  disabled={!voice || voice.voicePermissionStatus === "denied"}
-                  className={`flex items-center justify-center w-14 h-14 rounded-full transition-all ${voice?.isListening
+            {/* Control Buttons */}
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={handleVoiceToggle}
+                disabled={!voice || voice.voicePermissionStatus === "denied"}
+                className={`flex items-center px-8 py-3 rounded-lg font-medium transition-all ${
+                  voice?.isListening
                     ? "bg-red-500 hover:bg-red-600 text-white"
                     : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    }`}
-                >
-                  {voice?.isListening ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-                </button>
-
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-900">
-                    {voice?.isListening ? "Listening..." : voice?.isSpeaking ? "AI Speaking..." : "Click to speak"}
-                  </span>
-                </div>
-
-                {voice?.isListening && (
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
-                    <span className="text-xs text-red-600">Recording</span>
-                  </div>
-                )}
-              </div>
-
+                }`}
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                {voice?.isListening ? "Stop Recording" : "Click to speak"}
+              </button>
+              
               <button
                 onClick={handleCompleteIntake}
                 disabled={!canComplete || isSubmitting}
-                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${canComplete && !isSubmitting
-                  ? "bg-green-500 hover:bg-green-600 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                className={`flex items-center px-8 py-3 rounded-lg font-medium transition-all ${
+                  canComplete && !isSubmitting
+                    ? "bg-green-500 hover:bg-green-600 text-white"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
+                
                 {isSubmitting ? (
                   <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
@@ -267,17 +273,19 @@ export default function PatientIntake() {
                 )}
                 {isSubmitting ? "Submitting..." : "Complete Intake"}
               </button>
+              
             </div>
 
-            {!canComplete && (
-              <p className="text-xs text-gray-500 mt-2">Start the conversation to enable completion.</p>
-            )}
-            {canComplete && (
-              <p className="text-xs text-green-600 mt-2">You can submit whenever you’re ready.</p>
+            <p className="text-sm text-gray-500 mt-4">{messages.length} messages exchanged</p>
+            {!canComplete ? (
+              <p className="text-xs text-gray-400 mt-2">Start the conversation to enable completion.</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-2">You can submit whenever you’re ready.</p>
             )}
           </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
