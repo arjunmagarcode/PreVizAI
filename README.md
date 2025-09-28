@@ -74,94 +74,100 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 - Neo4j (optional for Knowledge Graph)
 
 ### 1️⃣ Clone & Install
-bash
+
+```bash
 # Clone the repository
 git clone <repository-url>
-cd previz
+cd PreVizAI   # or the folder name where you cloned the repo
 
 # Install frontend dependencies
 npm install
 
 # (Optional) Create Python virtual environment
 python3 -m venv .venv
+# macOS / Linux
 source .venv/bin/activate
+# Windows (PowerShell)
+# .venv\Scripts\Activate.ps1
 
 # Install backend dependencies
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 2️⃣ Configure Environment Variables
-Create the following files and add your credentials:
+Create the following files and add your credentials.
 
-Frontend (.env.local in root)
+Frontend — .env.local in the repo root:
 
 ini
 Copy code
 NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
-Backend (backend/.env)
+Backend — backend/.env:
 
 ini
 Copy code
 OPENAI_API_KEY=your_openai_api_key_here
+# Neo4j settings are optional if you are not using the Knowledge Graph
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_neo4j_password_here
 FLASK_ENV=development
 FLASK_DEBUG=True
-(Neo4j variables optional if not using the Knowledge Graph)
+Security note: Never commit .env.local or backend/.env. Add them to .gitignore.
 
 3️⃣ Run the App
-Open two terminals:
+Open two terminals.
 
 Backend
 
 bash
 Copy code
 cd backend
+# activate virtualenv if you created one
+# source .venv/bin/activate   (macOS/Linux)
 python run_server.py
-# Backend running at http://localhost:5000
+# Backend running at: http://localhost:5000
 Frontend
 
 bash
 Copy code
+# from repo root (where package.json lives)
 npm run dev
-# Frontend running at http://localhost:3000
+# Frontend running at: http://localhost:3000
 🎮 Usage Guide
-Doctors
-
-Visit http://localhost:3000/doctor
+For Doctors
+Visit: http://localhost:3000/doctor
 
 Send intake requests to patients.
 
-Review completed reports with instant insights.
+Review completed reports and explore the Knowledge Graph (if enabled).
 
-Patients
+For Patients
+Visit: http://localhost:3000/patient
 
-Visit http://localhost:3000/patient
+Click the microphone to start Cedar OS voice intake.
 
-Click the microphone to start the Cedar OS voice intake.
+Describe symptoms naturally and answer follow-up questions.
 
-Describe your symptoms naturally and answer follow-up questions.
-
-Submit when finished—doctor instantly receives the report.
+Submit when finished — doctor receives the report.
 
 📄 Medical Report Structure
-The AI generates a structured document, including:
+The AI generates a structured document that includes:
 
-Chief Complaint – patient’s primary concern in their own words.
+Chief Complaint – patient’s primary concern in their own words
 
-History of Present Illness – duration, severity, onset, context.
+History of Present Illness (HPI) – duration, severity, onset, context
 
-Triggers & Relieving Factors – key diagnostic info.
+Triggers & Relieving Factors – diagnostic clues
 
 Medical History & Medications
 
-Red Flag Symptoms – urgent warning signs.
+Red Flag Symptoms – urgent warning signs
 
-Functional Impact – effect on daily life.
+Functional Impact – effect on daily life
 
-Recommended Follow-up Actions – suggested next steps.
+Recommended Follow-up Actions – suggested next steps
 
-🤝 Team
+👥 Team
 Arjun Pun Magar – Frontend & Cedar OS Integration
 
 [Name] – Backend & Flask API
@@ -170,10 +176,12 @@ Arjun Pun Magar – Frontend & Cedar OS Integration
 
 [Name] – Neo4j Graph Visualization
 
+(Replace [Name] placeholders with actual team members.)
+
 🙏 Acknowledgements
-Special thanks to the Cedar OS team for providing the powerful voice integration framework that enabled the vision of PreVizAI.
+Special thanks to the Cedar OS team for providing the voice SDK and support during HackGT.
 
 📜 License
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the LICENSE file for details.
 
-<div align="center"> Built with ❤️ for HackGT 2025 </div> 
+<div align="center">Built with ❤️ for HackGT 2025</div> ```
