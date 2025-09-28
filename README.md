@@ -4,7 +4,7 @@
 **HackGT 2025 – Cedar OS Sponsor Track**  
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-![Cedar OS]([https://img.shields.io/badge/Cedar%20OS-Voice%20AI-purple?style=for-the-badge)](https://www.cedar.com/kora-ai-voice-agent/)
+![Cedar OS](https://img.shields.io/badge/Cedar%20OS-Voice%20AI-purple?style=for-the-badge)
 [![OpenAI GPT-4](https://img.shields.io/badge/OpenAI-GPT--4-green?style=for-the-badge&logo=openai)](https://openai.com/)
 
 🏆 **Submission Complete**
