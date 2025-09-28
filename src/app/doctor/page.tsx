@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell, Users, Send, ArrowLeft, CheckCircle, Clock, AlertCircle, Eye, X
+  Bell, Users, Send, ArrowLeft, CheckCircle, Clock, AlertCircle, Eye, X, Sparkles, FileText
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+
+// Cedar hooks
+import { useRegisterState, useCedarStore } from "cedar-os";
+
+// Cedar helper we just added
+import { explainEmrInsight, findEmrEvidence } from "@/cedar/agents/emrExplain";
 
 interface Patient {
   id: string;
@@ -46,6 +52,92 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+/** Drawer UI */
+function EvidenceDrawer({
+  open,
+  onClose,
+  selectedText,
+  emrHits,
+  onAskCedar,
+  cedarBusy,
+  cedarAnswer,
+  cedarAvailable,
+}: {
+  open: boolean;
+  onClose: () => void;
+  selectedText: string;
+  emrHits: { path: string; value: string }[];
+  onAskCedar: () => void;
+  cedarBusy: boolean;
+  cedarAnswer: string | null;
+  cedarAvailable: boolean;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <aside className="absolute right-0 top-0 h-full w-full sm:w-[440px] bg-white shadow-2xl flex flex-col">
+        <div className="px-4 py-3 border-b flex items-center justify-between">
+          <div>
+            <div className="text-xs text-gray-500">Evidence for</div>
+            <div className="text-sm font-medium text-gray-900 line-clamp-2">{selectedText}</div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded hover:bg-gray-100" aria-label="Close">
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-5 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-gray-600">Ask Cedar for a quick rationale</div>
+            <button
+              onClick={onAskCedar}
+              disabled={!cedarAvailable || cedarBusy}
+              className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded text-xs ${cedarAvailable ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                }`}
+              title={cedarAvailable ? "Ask Copilot (Cedar)" : "Cedar LLM not initialized"}
+            >
+              {/* icon-only per your request */}
+              <Sparkles className="h-4 w-4" />
+            </button>
+          </div>
+
+          {cedarAnswer && (
+            <div className="rounded border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900 whitespace-pre-wrap">
+              {cedarAnswer}
+            </div>
+          )}
+
+          <div>
+            <div className="text-xs uppercase text-gray-500 mb-2">EMR REFERENCES</div>
+            {emrHits.length === 0 ? (
+              <div className="text-sm text-gray-600">No obvious EMR references.</div>
+            ) : (
+              <ul className="space-y-2">
+                {emrHits.map((e, i) => (
+                  <li
+                    key={i}
+                    className="text-sm bg-white border border-gray-200 rounded-lg p-3 flex items-start gap-3"
+                  >
+                    <div className="h-5 w-5 mt-0.5 flex-shrink-0 rounded bg-amber-100 text-amber-700 flex items-center justify-center">
+                      <FileText className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-mono text-gray-700 truncate">{e.path}</div>
+                      <div className="mt-1 text-gray-900">{e.value}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+/** ---------- MAIN PAGE ---------- */
 export default function DoctorDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,19 +183,40 @@ export default function DoctorDashboard() {
   // patientId -> reportId
   const [reportMap, setReportMap] = useState<Record<string, string>>({});
 
-  // Modal state
+  // Report modal state
   const [openReport, setOpenReport] = useState<ReportPayload | null>(null);
   const [tab, setTab] = useState<"summary" | "emr" | "graph">("summary");
 
-  // Toast
-  const [toast, setToast] = useState<{ show: boolean; text: string } | null>(null);
+  // Drawer + Cedar state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState("");
+  const [emrHits, setEmrHits] = useState<{ path: string; value: string }[]>([]);
+  const [cedarAnswer, setCedarAnswer] = useState<string | null>(null);
+  const [cedarBusy, setCedarBusy] = useState(false);
 
-  // Read params on redirect after intake completion
+  // Cedar store
+  const cedarStore: any = useCedarStore();
+  const cedarCallLLM = cedarStore?.llm?.callLLM || cedarStore?.callLLM || null;
+  const cedarAvailable = Boolean(cedarCallLLM);
+
+  // Publish to Cedar agent context (so the copilot sees current selection & emr)
+  useRegisterState({
+    key: "selectedText",
+    value: selectedText,
+    description: "Doctor-selected EMR insight text for explanation",
+  });
+  const emrSlice = useMemo(() => openReport?.emr_tab || {}, [openReport]);
+  useRegisterState({
+    key: "emrData",
+    value: emrSlice,
+    description: "Report EMR data for Cedar context",
+  });
+
   const completedParam = searchParams.get("intake");
   const completedPatientId = searchParams.get("patientId");
   const reportIdFromQuery = searchParams.get("reportId");
 
-  // Safety net: on load, scan localStorage for any saved reports and map to patients
+  // Map latest reports from localStorage into reportMap once
   useEffect(() => {
     if (typeof window === "undefined") return;
     const map: Record<string, { reportId: string; createdAt: number }> = {};
@@ -116,7 +229,6 @@ export default function DoctorDashboard() {
         const data = JSON.parse(raw) as ReportPayload;
         if (!data.patientId || !data.reportId) continue;
         const ts = Date.parse(data.createdAt || "") || 0;
-        // keep the latest report for each patient
         if (!map[data.patientId] || ts > map[data.patientId].createdAt) {
           map[data.patientId] = { reportId: data.reportId, createdAt: ts };
         }
@@ -127,6 +239,7 @@ export default function DoctorDashboard() {
     }
   }, []);
 
+  // Handle redirect after intake completion
   useEffect(() => {
     if (completedParam === "completed" && completedPatientId && !processedCompleted.current.has(completedPatientId)) {
       const p = patients.find((x) => x.id === completedPatientId);
@@ -143,7 +256,6 @@ export default function DoctorDashboard() {
           );
         }
 
-        // If the reportId came via URL, record it immediately
         if (reportIdFromQuery) {
           setReportMap((prev) => ({ ...prev, [p.id]: reportIdFromQuery }));
         }
@@ -158,17 +270,9 @@ export default function DoctorDashboard() {
           },
           ...prev,
         ]);
-
-        setToast({ show: true, text: `Intake complete for ${p.name}` });
-
-        const t = setTimeout(() => {
-          setToast(null);
-          router.replace(window.location.pathname);
-        }, 3500);
-        return () => clearTimeout(t);
       }
     }
-  }, [completedParam, completedPatientId, reportIdFromQuery, patients, router]);
+  }, [completedParam, completedPatientId, reportIdFromQuery, patients]);
 
   const sendIntakeRequest = async (patientId: string) => {
     try {
@@ -233,12 +337,28 @@ export default function DoctorDashboard() {
     }
   }
 
-  function GraphViewer({ graph }: { graph: any }) {
-    return (
-      <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-60">
-        {JSON.stringify(graph, null, 2)}
-      </pre>
-    );
+  /** Open the drawer for a specific EMR insight (icon click) */
+  function openExplainFor(text: string) {
+    if (!openReport) return;
+    setSelectedText(text);
+    setCedarAnswer(null);
+    setEmrHits(findEmrEvidence(openReport.emr_tab, text));
+    setDrawerOpen(true);
+  }
+
+  /** Ask Cedar (or fallback) via our helper */
+  async function onAskCedar() {
+    if (!openReport) return;
+    setCedarBusy(true);
+    try {
+      const { answer, hits } = await explainEmrInsight(cedarStore, selectedText, openReport.emr_tab || {});
+      setEmrHits(hits);
+      setCedarAnswer(answer);
+    } catch {
+      setCedarAnswer("Unable to get an explanation right now.");
+    } finally {
+      setCedarBusy(false);
+    }
   }
 
   const highlightId = completedParam === "completed" ? completedPatientId : null;
@@ -263,14 +383,6 @@ export default function DoctorDashboard() {
                 </span>
               )}
             </div>
-
-            {/* Toast */}
-            {toast?.show && (
-              <div className="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-gray-800">{toast.text}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -303,7 +415,6 @@ export default function DoctorDashboard() {
                             <span className="text-sm text-gray-600">{getStatusText(patient.status)}</span>
                           </div>
 
-                          {/* View Report chip when completed and report available */}
                           {patient.status === "completed" && reportId && (
                             <button
                               onClick={() => {
@@ -323,7 +434,6 @@ export default function DoctorDashboard() {
                             </button>
                           )}
 
-                          {/* Placeholder if completed but not yet stored */}
                           {patient.status === "completed" && !reportId && (
                             <button
                               type="button"
@@ -435,206 +545,259 @@ export default function DoctorDashboard() {
 
       {/* Report Modal */}
       {openReport && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpenReport(null)} />
-          <div className="relative z-50 w-full max-w-3xl bg-white rounded-2xl shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Report — {openReport.patientName || "Patient"}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Created {new Date(openReport.createdAt).toLocaleString()}
-                </p>
+        <>
+          <div className="fixed inset-0 z-40 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setOpenReport(null)} />
+            <div className="relative z-50 w-full max-w-3xl bg-white rounded-2xl shadow-2xl">
+              <div className="flex items-center justify-between px-5 py-4 border-b">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Report — {openReport.patientName || "Patient"}
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Created {new Date(openReport.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpenReport(null)}
+                  className="p-2 rounded-lg hover:bg-gray-100"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5 text-gray-600" />
+                </button>
               </div>
-              <button
-                onClick={() => setOpenReport(null)}
-                className="p-2 rounded-lg hover:bg-gray-100"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
 
-            {/* Tabs */}
-            <div className="px-5 pt-3 flex items-center gap-2">
-              <button
-                onClick={() => setTab("summary")}
-                className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "summary" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
-              >
-                Summary
-              </button>
-              <button
-                onClick={() => setTab("emr")}
-                className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "emr" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
-              >
-                EMR Insights
-              </button>
-              <button
-                onClick={() => setTab("graph")}
-                className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "graph" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
-              >
-                Graph
-              </button>
-            </div>
+              {/* Tabs */}
+              <div className="px-5 pt-3 flex items-center gap-2">
+                <button
+                  onClick={() => setTab("summary")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "summary" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                >
+                  Summary
+                </button>
+                <button
+                  onClick={() => setTab("emr")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "emr" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                >
+                  EMR Insights
+                </button>
+                <button
+                  onClick={() => setTab("graph")}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "graph" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                >
+                  Graph
+                </button>
+              </div>
 
-            {/* Body */}
-            <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
-              {tab === "summary" && (
-                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">Visit Focus</h3>
-                  </div>
-                  <div className="p-5 space-y-4">
-                    {(() => {
-                      const sum = openReport.insights_report || {};
-                      const vf = sum.visit_focus || {};
-                      const assoc = (vf.associated || {}) as { positives?: string[]; negatives?: string[] };
+              {/* Body */}
+              <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                {tab === "summary" && (
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-900">Visit Focus</h3>
+                    </div>
+                    <div className="p-5 space-y-4 text-sm text-gray-800">
+                      {(() => {
+                        const sum = openReport.insights_report || {};
+                        const vf = sum.visit_focus || {};
+                        const assoc = (vf.associated || {}) as { positives?: string[]; negatives?: string[] };
 
-                      return (
-                        <div className="space-y-3 text-sm text-gray-800">
-                          <div><span className="font-medium">Chief complaint:</span> {vf.chief_complaint || "Not stated"}</div>
-                          <div><span className="font-medium">Onset / duration / severity:</span> {vf.onset_duration_severity || "Not stated"}</div>
+                        return (
+                          <>
+                            <div>
+                              <span className="font-medium">Chief complaint:</span>{" "}
+                              <span>{vf.chief_complaint || "Not stated"}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Onset / duration / severity:</span>{" "}
+                              <span>{vf.onset_duration_severity || "Not stated"}</span>
+                            </div>
 
-                          {(assoc.positives?.length || assoc.negatives?.length) && (
-                            <div className="grid sm:grid-cols-2 gap-4">
-                              <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Associated ( + )</div>
-                                <ul className="list-disc pl-5 space-y-1">{(assoc.positives || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
+                            {(assoc.positives?.length || assoc.negatives?.length) && (
+                              <div className="grid sm:grid-cols-2 gap-6">
+                                <div>
+                                  <div className="text-xs uppercase text-gray-500 mb-1">Associated ( + )</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {(assoc.positives || []).map((s, i) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <div className="text-xs uppercase text-gray-500 mb-1">Associated ( − )</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {(assoc.negatives || []).map((s, i) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ul>
+                                </div>
                               </div>
+                            )}
+
+                            {Array.isArray(sum.quick_checks) && sum.quick_checks.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Associated ( − )</div>
-                                <ul className="list-disc pl-5 space-y-1">{(assoc.negatives || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
-                              </div>
-                            </div>
-                          )}
-
-                          {sum.concise_summary && (
-                            <div className="rounded-lg bg-gray-50 p-3">
-                              <div className="text-xs uppercase text-gray-500 mb-1">Concise Summary</div>
-                              <div>{sum.concise_summary}</div>
-                            </div>
-                          )}
-
-                          {Array.isArray(sum.quick_checks) && sum.quick_checks.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">Today’s Quick Checks</div>
-                              <ul className="list-disc pl-5 space-y-1">{sum.quick_checks.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
-
-                          {Array.isArray(sum.next_best_actions) && sum.next_best_actions.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">Next Best Actions</div>
-                              <ul className="list-disc pl-5 space-y-1">{sum.next_best_actions.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
-
-                          {Array.isArray(sum.transcript_snippets) && sum.transcript_snippets.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">Transcript Snippets</div>
-                              <ul className="list-disc pl-5 space-y-1">{sum.transcript_snippets.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {tab === "emr" && (
-                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">EMR Insights</h3>
-                  </div>
-                  <div className="p-5 space-y-6 text-sm text-gray-800">
-                    {(() => {
-                      const emr = openReport.emr_tab || {};
-                      const rh = emr.relevant_history || {};
-                      return (
-                        <>
-                          {(rh.conditions?.length || rh.meds?.length || rh.allergies_alerts?.length) && (
-                            <div className="grid sm:grid-cols-3 gap-4">
-                              <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Conditions</div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Today’s Quick Checks</div>
                                 <ul className="list-disc pl-5 space-y-1">
-                                  {(rh.conditions || []).map((c: any, i: number) => <li key={i}>{c.name} — {c.status}</li>)}
+                                  {sum.quick_checks.map((s: string, i: number) => (
+                                    <li key={i}>{s}</li>
+                                  ))}
                                 </ul>
                               </div>
+                            )}
+
+                            {Array.isArray(sum.next_best_actions) && sum.next_best_actions.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Meds (relevant)</div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Next Best Actions</div>
                                 <ul className="list-disc pl-5 space-y-1">
-                                  {(rh.meds || []).map((m: any, i: number) => <li key={i}>{m.name} — {m.purpose}</li>)}
+                                  {sum.next_best_actions.map((s: string, i: number) => (
+                                    <li key={i}>{s}</li>
+                                  ))}
                                 </ul>
                               </div>
+                            )}
+
+                            {sum.concise_summary && (
+                              <div className="rounded-lg bg-gray-50 p-3">
+                                <div className="text-xs uppercase text-gray-500 mb-1">Concise Summary</div>
+                                <div>{sum.concise_summary}</div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {tab === "emr" && (
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-900">EMR Insights</h3>
+                    </div>
+                    <div className="p-5 space-y-6 text-sm text-gray-800">
+                      {(() => {
+                        const emr = openReport.emr_tab || {};
+                        const rh = emr.relevant_history || {};
+
+                        const iconOnlyAsk = (text: string, i: number) => (
+                          <li key={i} className="flex items-start justify-between gap-3">
+                            <span className="pr-2">{text}</span>
+                            <button
+                              className="inline-flex items-center justify-center w-7 h-7 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
+                              onClick={() => openExplainFor(text)}
+                              title="Ask Copilot"
+                              aria-label="Ask Copilot"
+                            >
+                              <Sparkles className="h-4 w-4" />
+                            </button>
+                          </li>
+                        );
+
+                        return (
+                          <>
+                            {emr.risk_flags?.length > 0 && (
                               <div>
-                                <div className="text-xs uppercase text-gray-500 mb-1">Allergies / Alerts</div>
-                                <ul className="list-disc pl-5 space-y-1">
-                                  {(rh.allergies_alerts || []).map((a: string, i: number) => <li key={i}>{a}</li>)}
+                                <div className="text-xs uppercase text-gray-500 mb-1">Risk Flags</div>
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {emr.risk_flags.map(iconOnlyAsk)}
                                 </ul>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {emr.risk_flags?.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">Risk Flags</div>
-                              <ul className="list-disc pl-5 space-y-1">{emr.risk_flags.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
+                            {emr.trend_insights?.length > 0 && (
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Trend Insights</div>
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {emr.trend_insights.map(iconOnlyAsk)}
+                                </ul>
+                              </div>
+                            )}
 
-                          {emr.trend_insights?.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">Trend Insights</div>
-                              <ul className="list-disc pl-5 space-y-1">{emr.trend_insights.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
+                            {emr.care_gaps?.length > 0 && (
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Care Gaps</div>
+                                <ul className="list-disc pl-5 space-y-2">
+                                  {emr.care_gaps.map(iconOnlyAsk)}
+                                </ul>
+                              </div>
+                            )}
 
-                          {emr.care_gaps?.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">Care Gaps</div>
-                              <ul className="list-disc pl-5 space-y-1">{emr.care_gaps.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
-
-                          {emr.emr_transcript_conflicts?.length > 0 && (
-                            <div>
-                              <div className="text-xs uppercase text-gray-500 mb-1">EMR–Transcript Conflicts</div>
-                              <ul className="list-disc pl-5 space-y-1">{emr.emr_transcript_conflicts.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
+                            {(rh.conditions?.length || rh.meds?.length || rh.allergies_alerts?.length) && (
+                              <div className="grid sm:grid-cols-3 gap-4 pt-2">
+                                <div>
+                                  <div className="text-xs uppercase text-gray-500 mb-1">Conditions</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {(rh.conditions || []).map((c: any, i: number) => {
+                                      const t = `${c.name} — ${c.status}`;
+                                      return <li key={i}>{t}</li>;
+                                    })}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <div className="text-xs uppercase text-gray-500 mb-1">Meds (relevant)</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {(rh.meds || []).map((m: any, i: number) => {
+                                      const t = `${m.name} — ${m.purpose}`;
+                                      return <li key={i}>{t}</li>;
+                                    })}
+                                  </ul>
+                                </div>
+                                <div>
+                                  <div className="text-xs uppercase text-gray-500 mb-1">Allergies / Alerts</div>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {(rh.allergies_alerts || []).map((a: string, i: number) => (
+                                      <li key={i}>{a}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {tab === "graph" && (
-                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">Annotated Graph</h3>
+                {tab === "graph" && (
+                  <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div className="px-5 py-4 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-900">Annotated Graph</h3>
+                    </div>
+                    <div className="p-5">
+                      {openReport.annotated_graph ? (
+                        <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-60">
+                          {JSON.stringify(openReport.annotated_graph, null, 2)}
+                        </pre>
+                      ) : (
+                        <p className="text-sm text-gray-500">No graph provided.</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="p-5">
-                    {openReport.annotated_graph ? (
-                      <GraphViewer graph={openReport.annotated_graph} />
-                    ) : (
-                      <p className="text-sm text-gray-500">No graph provided.</p>
-                    )}
-                  </div>
-                </div>
-              )}
+                )}
 
-              <details className="mt-2">
-                <summary className="text-sm text-gray-600 cursor-pointer">Show transcript</summary>
-                <pre className="mt-2 text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-56">
-                  {openReport.transcript || "No transcript captured."}
-                </pre>
-              </details>
+                <details className="mt-2">
+                  <summary className="text-sm text-gray-600 cursor-pointer">Show transcript</summary>
+                  <pre className="mt-2 text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-56">
+                    {openReport.transcript || "No transcript captured."}
+                  </pre>
+                </details>
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* Evidence drawer */}
+          <EvidenceDrawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            selectedText={selectedText}
+            emrHits={emrHits}
+            onAskCedar={onAskCedar}
+            cedarBusy={cedarBusy}
+            cedarAnswer={cedarAnswer}
+            cedarAvailable={cedarAvailable}
+          />
+        </>
       )}
     </div>
   );
