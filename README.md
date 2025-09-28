@@ -62,7 +62,7 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 | **Database (optional)** | Neo4j | Ideal for representing complex symptom-condition relationships. |
 
 ---
----
+
 ## 🚀 Quick Start & Installation
 
 ### Prerequisites
@@ -74,16 +74,17 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 
 ### 1️⃣ Clone & Install
 
-``bash
+```bash
 # Clone the repository
 git clone <repository-url>
 cd PreVizAI   # or the folder name where you cloned the repo
 
-### Install frontend dependencies
+# Install frontend dependencies
 npm install
 
 # (Optional) Create Python virtual environment
 python3 -m venv .venv
+
 # macOS / Linux
 source .venv/bin/activate
 # Windows (PowerShell)
@@ -94,7 +95,7 @@ pip install -r backend/requirements.txt
 2️⃣ Configure Environment Variables
 Create the following files and add your credentials.
 
-Frontend — .env.local in the repo root:
+Frontend — .env.local (in the repo root):
 
 ini
 Copy code
@@ -105,7 +106,7 @@ Backend — backend/.env:
 ini
 Copy code
 OPENAI_API_KEY=your_openai_api_key_here
-### Neo4j settings are optional if you are not using the Knowledge Graph
+# Neo4j settings are optional if you are not using the Knowledge Graph
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_neo4j_password_here
@@ -182,6 +183,5 @@ Special thanks to the Cedar OS team for providing the voice SDK and support duri
 
 📜 License
 This project is licensed under the MIT License. See the LICENSE file for details.
----
 
 <div align="center">Built with ❤️ for HackGT 2025</div> ```
