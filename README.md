@@ -1,7 +1,6 @@
 <div align="center">
 
-# PreVizAI: AI-Powered Patient Intake System 🎙️  
-**HackGT 2025 – Cedar OS Sponsor Track**  
+# PreVizAI: AI-Powered Patient Intake System 🎙️   
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![Cedar OS](https://img.shields.io/badge/Cedar%20OS-Voice%20AI-purple?style=for-the-badge)](https://www.ycombinator.com/companies/cedar)
@@ -63,7 +62,7 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 | **Database (optional)** | Neo4j | Ideal for representing complex symptom-condition relationships. |
 
 ---
-
+---
 ## 🚀 Quick Start & Installation
 
 ### Prerequisites
@@ -183,5 +182,6 @@ Special thanks to the Cedar OS team for providing the voice SDK and support duri
 
 📜 License
 This project is licensed under the MIT License. See the LICENSE file for details.
+---
 
 <div align="center">Built with ❤️ for HackGT 2025</div> ```
