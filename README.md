@@ -73,7 +73,6 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 - Neo4j (optional for Knowledge Graph)
 
 ### 1️⃣ Clone & Install
-
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -92,19 +91,19 @@ source .venv/bin/activate
 
 # Install backend dependencies
 pip install -r backend/requirements.txt
-2️⃣ Configure Environment Variables
+```
+
+### 2️⃣ Configure Environment Variables
 Create the following files and add your credentials.
 
-Frontend — .env.local (in the repo root):
-
-ini
-Copy code
+**Frontend — `.env.local` (in the repo root):**
+```ini
 NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
-Backend — backend/.env:
+```
 
-ini
-Copy code
+**Backend — `backend/.env`:**
+```ini
 OPENAI_API_KEY=your_openai_api_key_here
 # Neo4j settings are optional if you are not using the Knowledge Graph
 NEO4J_URI=bolt://localhost:7687
@@ -112,76 +111,77 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_neo4j_password_here
 FLASK_ENV=development
 FLASK_DEBUG=True
-Security note: Never commit .env.local or backend/.env. Add them to .gitignore.
+```
 
-3️⃣ Run the App
-Open two terminals.
+> **Security note:** Never commit `.env.local` or `backend/.env`. Add them to `.gitignore`.
 
-Backend
+### 3️⃣ Run the App
+Open **two terminals**.
 
-bash
-Copy code
+**Backend**
+```bash
 cd backend
 # activate virtualenv if you created one
 # source .venv/bin/activate   (macOS/Linux)
 python run_server.py
 # Backend running at: http://localhost:5000
-Frontend
+```
 
-bash
-Copy code
+**Frontend**
+```bash
 # from repo root (where package.json lives)
 npm run dev
 # Frontend running at: http://localhost:3000
-🎮 Usage Guide
-For Doctors
-Visit: http://localhost:3000/doctor
+```
 
-Send intake requests to patients.
+---
 
-Review completed reports and explore the Knowledge Graph (if enabled).
+## 🎮 Usage Guide
 
-For Patients
-Visit: http://localhost:3000/patient
+### For Doctors
+Visit: [http://localhost:3000/doctor](http://localhost:3000/doctor)  
+- Send intake requests to patients.  
+- Review completed reports and explore the Knowledge Graph (if enabled).
 
-Click the microphone to start Cedar OS voice intake.
+### For Patients
+Visit: [http://localhost:3000/patient](http://localhost:3000/patient)  
+- Click the microphone to start Cedar OS voice intake.  
+- Describe symptoms naturally and answer follow-up questions.  
+- Submit when finished — doctor receives the report.
 
-Describe symptoms naturally and answer follow-up questions.
+---
 
-Submit when finished — doctor receives the report.
-
-📄 Medical Report Structure
+## 📄 Medical Report Structure
 The AI generates a structured document that includes:
 
-Chief Complaint – patient’s primary concern in their own words
+- **Chief Complaint** – patient’s primary concern in their own words  
+- **History of Present Illness (HPI)** – duration, severity, onset, context  
+- **Triggers & Relieving Factors** – diagnostic clues  
+- **Medical History & Medications**  
+- **Red Flag Symptoms** – urgent warning signs  
+- **Functional Impact** – effect on daily life  
+- **Recommended Follow-up Actions** – suggested next steps  
 
-History of Present Illness (HPI) – duration, severity, onset, context
+---
 
-Triggers & Relieving Factors – diagnostic clues
+## 👥 Team
+- **Arjun Pun Magar** – Frontend & Cedar OS Integration  
+- **[Name]** – Backend & Flask API  
+- **[Name]** – AI Prompt Engineering / Medical Report Design  
+- **[Name]** – Neo4j Graph Visualization  
 
-Medical History & Medications
+*(Replace [Name] placeholders with actual team members.)*
 
-Red Flag Symptoms – urgent warning signs
+---
 
-Functional Impact – effect on daily life
-
-Recommended Follow-up Actions – suggested next steps
-
-👥 Team
-Arjun Pun Magar – Frontend & Cedar OS Integration
-
-[Name] – Backend & Flask API
-
-[Name] – AI Prompt Engineering / Medical Report Design
-
-[Name] – Neo4j Graph Visualization
-
-(Replace [Name] placeholders with actual team members.)
-
-🙏 Acknowledgements
+## 🙏 Acknowledgements
 Special thanks to the Cedar OS team for providing the voice SDK and support during HackGT.
 
-📜 License
+---
+
+## 📜 License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
-<div align="center">Built with ❤️ for HackGT 2025</div> ```
+---
+
+<div align="center">Built with ❤️ for HackGT 2025</div>
