@@ -74,7 +74,7 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 - Neo4j (optional for Knowledge Graph)
 
 ### 1️⃣ Clone & Install
-```bash
+bash
 # Clone the repository
 git clone <repository-url>
 cd previz
