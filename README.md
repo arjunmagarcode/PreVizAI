@@ -166,11 +166,9 @@ The AI generates a structured document that includes:
 
 ## 👥 Team
 - **Arjun Pun Magar** – Frontend & Cedar OS Integration  
-- **[Name]** – Backend & Flask API  
-- **[Name]** – AI Prompt Engineering / Medical Report Design  
-- **[Name]** – Neo4j Graph Visualization  
-
-*(Replace [Name] placeholders with actual team members.)*
+- **Vinh Pham** – Backend & Flask API ( Neo4j Graph Visualization)  
+- **Om Nepal** – AI Prompt Engineering / Medical Report Design  
+- **Jonathan Navarro** –  Project Manager 
 
 ---
 
