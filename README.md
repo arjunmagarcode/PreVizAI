@@ -20,7 +20,7 @@
 ---
 
 ## ✨ Project Vision
-**PreVizAI** is a modern, HIPAA-mindful healthcare web app built with **Next.js** and **Cedar OS Voice Capabilities** to transform pre-appointment patient intake.
+PreVizAI is a modern, HIPAA-conscious healthcare web application built with Next.js and Cedar OS Voice Capabilities, designed to streamline and transform pre-appointment patient intake through natural, voice-powered AI interactions.
 
 **The Problem**  
 Traditional patient intake relies on long, static forms—slow and often incomplete. Doctors spend 15+ minutes on repetitive questions, risking misdiagnosis and frustrating patients.
