@@ -1,0 +1,43 @@
+{
+  "name": "previz",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "dev:backend": "cd backend && python run_server.py",
+    "dev:full": "concurrently \"npm run dev\" \"npm run dev:backend\"",
+    "install:backend": "cd backend && pip install -r requirements.txt",
+    "setup": "npm install && npm run install:backend"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.38",
+    "ai": "^5.0.56",
+    "cedar-os": "^0.1.21",
+    "cytoscape": "^3.33.1",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "cytoscape-popper": "^4.0.1",
+    "lucide-react": "^0.544.0",
+    "motion": "^12.23.22",
+    "next": "15.5.4",
+    "openai": "^5.23.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
