@@ -176,4 +176,4 @@ Special thanks to the Cedar OS team for providing the powerful voice integration
 📜 License
 This project is licensed under the MIT License.
 
-<div align="center"> Built with ❤️ for HackGT 2025 </div> ```
+<div align="center"> Built with ❤️ for HackGT 2025 </div> 
