@@ -1,4 +1,4 @@
-# PreViz - AI-Powered Patient Intake System
+# PreVizAI - AI-Powered Patient Intake System
 
 A modern healthcare web application built with Next.js and Cedar OS for HackGT's Cedar OS sponsor track. This application streamlines pre-appointment patient intake through voice-powered AI conversations, allowing patients to describe their symptoms naturally and providing doctors with comprehensive intake reports.
 
