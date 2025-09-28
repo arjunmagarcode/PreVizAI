@@ -193,3 +193,6 @@ coverage.xml
 # Compiled native extensions (python)
 *.pyd
 *.pyo
+
+.env
+.env.local

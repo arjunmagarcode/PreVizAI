@@ -2,14 +2,13 @@
 from flask import Flask, request, jsonify
 import json
 from createKnowledgeGraph import build_knowledge_graph
-from reviseKnowledgeGraph import revise_knowledge_graph, EXAMPLE_EMR_JSON
+from reviseKnowledgeGraph import revise_knowledge_graph
 from generatePatientReport import generate_patient_report
 import os
 from flask_cors import CORS
 
 app = Flask(__name__)
-# Allow specific frontend origins (3000/3001)
-CORS(app, resources={r"/generate_report": {"origins": ["http://localhost:3000", "http://localhost:3001"]}})
+CORS(app)  # allow all origins for local dev
 
 ALLOWED_ORIGINS = {"http://localhost:3000", "http://localhost:3001"}
 
@@ -21,52 +20,64 @@ def add_cors_headers(resp):
         resp.headers["Vary"] = "Origin"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
         resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-        # resp.headers["Access-Control-Allow-Credentials"] = "true"  # enable if you send credentials
     return resp
 
 @app.route("/generate_report", methods=["POST", "OPTIONS"])
 def generate_report():
-    """
-    Expects JSON payload:
-    {
-        "transcript": "The text from the frontend"
-    }
-    """
     if request.method == "OPTIONS":
-        # Preflight response
+        print("OPTIONS preflight request received")
         return ("", 204)
 
     data = request.json
-    transcript = data.get("transcript")
+    print("=== /generate_report called ===")
+    print("Received headers:", dict(request.headers))
+    print("Received body:", data)
+
+    transcript = data.get("transcript") if data else None
     if not transcript:
+        print("Error: Transcript missing!")
         return jsonify({"error": "Transcript missing"}), 400
 
     # Load EMR data
-    with open(EXAMPLE_EMR_JSON, "r") as f:
+    emr_path = os.path.join("backend", "exampleEMR.json")
+    with open(emr_path, "r") as f:
         emr_data = json.load(f)
+    print("Loaded EMR data successfully")
 
-    # Step 1: Build initial knowledge graph from conversation
-    # You need to provide a prompt and API key; replace with your actual prompt and key
-    graph_prompt = "Extract a structured medical knowledge graph from this conversation."
+    # Step 1: Build initial knowledge graph
+    prompt_path = os.path.join(os.path.dirname(__file__), "LLM_Prompts", "knowledgeGraphPrompt.txt")
+    try:
+        with open(prompt_path, "r") as f:
+            graph_prompt = f.read()
+        print("Prompt loaded successfully:")
+        print(graph_prompt)
+    except FileNotFoundError:
+        print(f"File not found: {prompt_path}")    
+    
     api_key = os.getenv("OPENAI_API_KEY")
+    print("Calling build_knowledge_graph()...")
     initial_graph = build_knowledge_graph(transcript, graph_prompt, api_key)
+    print("Initial knowledge graph:", initial_graph)
 
-    # Step 2: Revise / annotate the knowledge graph
+    # Step 2: Revise / annotate graph
+    print("Calling revise_knowledge_graph()...")
     annotated_graph = revise_knowledge_graph(initial_graph, emr_data, transcript)
+    print("Annotated graph:", annotated_graph)
 
     # Step 3: Generate insights report and next steps
+    print("Calling generate_patient_report()...")
     report = generate_patient_report(annotated_graph, emr_data, transcript)
+    print("Generated report successfully")
+    print("Report summary keys:", list(report.keys()))
 
     return jsonify({
         "message": "Report generated successfully",
-        "insights_report": report["insights_report"],
-        "next_steps": report["next_steps"],
-        "graph": report["annotated_graph"]
+        "insights_report": report.get("insights_report"),
+        "next_steps": report.get("next_steps"),
+        "graph": report.get("annotated_graph")
     })
 
-
 if __name__ == "__main__":
-    # Ensure the OpenAI API key is loaded
     if not os.getenv("OPENAI_API_KEY"):
         print("Warning: OPENAI_API_KEY not set in environment.")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)

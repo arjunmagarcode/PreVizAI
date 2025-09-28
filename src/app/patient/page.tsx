@@ -12,7 +12,6 @@ export default function PatientIntake() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Optional: get patient id/name from query, e.g. /patient?pid=2&name=Michael%20Chen
   const patientId = searchParams.get("pid") ?? "1";
   const patientName = searchParams.get("name") ?? "Patient";
 
@@ -29,16 +28,10 @@ export default function PatientIntake() {
     return () => voiceStore?.resetVoiceState?.();
   }, [voiceStore]);
 
-  // Cedar messages (can be s.messages.items or s.messages)
   const rawMessages = useCedarStore((s: any) => s?.messages?.items ?? s?.messages ?? []);
   const messages: any[] = useMemo(() => (Array.isArray(rawMessages) ? rawMessages : []), [rawMessages]);
 
-  // const conversation = (Array.isArray(rawMessages) ? rawMessages : []).map((m: any) => ({
-  //   role: m.role === "assistant" ? "assistant" : "user",
-  //   content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
-  // }));
-
-  // Turn [{role, content}] into a single string the Flask endpoint expects
+  // Convert messages to a single transcript string
   function buildTranscriptString(msgs: any[]) {
     return msgs
       .map(m => {
@@ -49,14 +42,16 @@ export default function PatientIntake() {
       .join("\n");
   }
 
+  // --- DEBUG: log transcript whenever messages update ---
+  useEffect(() => {
+    const currentTranscript = buildTranscriptString(messages);
+    console.log("Current transcript stored in frontend:", currentTranscript);
+  }, [messages]);
 
-  // ✅ Button becomes clickable as soon as ANY message exists
   const canComplete = messages.length > 0;
-
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // After showing the success screen, redirect to the doctor dashboard
   useEffect(() => {
     if (!isCompleted) return;
     const timer = setTimeout(() => {
@@ -83,7 +78,7 @@ export default function PatientIntake() {
         return;
       }
       if (!voice.isListening) await voice.startListening();
-      else await voice.stopListening(); // triggers POST to /api/voice
+      else await voice.stopListening();
     } catch {
       alert("Microphone error. Please check your browser settings and try again.");
       try { voice.resetVoiceState?.(); } catch { }
@@ -95,31 +90,22 @@ export default function PatientIntake() {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // Flask expects: { "transcript": "<string>" }
       body: JSON.stringify({ transcript }),
     });
     if (!res.ok) {
       const msg = await res.text().catch(() => "");
       throw new Error(`Backend error ${res.status}: ${msg}`);
     }
-    return res.json(); // { message, insights_report, next_steps, graph }
+    return res.json();
   }
 
-  // In your Complete Intake handler:
   const handleCompleteIntake = async () => {
-    if (messages.length === 0) return;   // keep your “first turn disabled” rule
+    if (messages.length === 0) return;
     setIsSubmitting(true);
     try {
       const transcript = buildTranscriptString(messages);
       const data = await sendTranscriptToFlask(transcript);
-
-      // For now, just see it working:
       console.log("Report from Flask:", data);
-
-      // Optional: stash it for the doctor page to read
-      // localStorage.setItem("latestReport", JSON.stringify(data));
-      // router.push(`/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}`);
-
       setIsCompleted(true);
     } catch (e: any) {
       alert(e?.message || "Failed to send transcript");
@@ -128,9 +114,7 @@ export default function PatientIntake() {
     }
   };
 
-
   if (isCompleted) {
-    // Quick success page while redirecting (kept for UX polish; router.push happens above)
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
@@ -144,7 +128,6 @@ export default function PatientIntake() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -167,7 +150,6 @@ export default function PatientIntake() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 grid md:grid-cols-3 gap-6 h-[calc(100vh-80px)]">
-        {/* Sidebar */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Instructions</h2>
           <div className="space-y-4 text-sm text-gray-600">
@@ -187,7 +169,6 @@ export default function PatientIntake() {
           </div>
         </div>
 
-        {/* Main Chat */}
         <div className="md:col-span-2 bg-white rounded-xl shadow-lg flex flex-col">
           <div className="flex-1 p-6 overflow-y-auto">
             {messages.length === 0 ? (
@@ -219,7 +200,6 @@ export default function PatientIntake() {
             )}
           </div>
 
-          {/* Controls */}
           <div className="p-6 border-t bg-gray-50 rounded-b-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -248,13 +228,13 @@ export default function PatientIntake() {
                 )}
               </div>
 
-              <button
+                            <button
                 onClick={handleCompleteIntake}
                 disabled={!canComplete || isSubmitting}
                 className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${canComplete && !isSubmitting
                   ? "bg-green-500 hover:bg-green-600 text-white"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                }`}
               >
                 {isSubmitting ? (
                   <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
@@ -277,3 +257,4 @@ export default function PatientIntake() {
     </div>
   );
 }
+

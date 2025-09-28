@@ -1,4 +1,4 @@
-# reviseKnowledgeGraph.py
+# backend/reviseKnowledgeGraph.py
 import json
 from neo4j import GraphDatabase
 from openai import OpenAI
@@ -11,9 +11,6 @@ from dotenv import load_dotenv
 BASE_DIR = os.path.dirname(__file__)
 LLM_PROMPTS_DIR = os.path.join(BASE_DIR, "LLM_Prompts")
 NODE_CONTEXT_PROMPT_PATH = os.path.join(LLM_PROMPTS_DIR, "nodeContextSummarizationPrompt.txt")
-
-# Base dir and example EMR path (exported)
-EXAMPLE_EMR_JSON = os.path.join(BASE_DIR, "exampleEMR.json")
 
 # -----------------------------
 # LLM CONFIGURATION

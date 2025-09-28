@@ -1,4 +1,4 @@
-# backend/HCPSide/generatePatientReport.py
+# backend/generatePatientReport.py
 
 import os
 import json
