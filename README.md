@@ -80,7 +80,7 @@ PreVizAI replaces forms with a natural **voice-powered AI conversation**. Patien
 git clone <repository-url>
 cd PreVizAI   # or the folder name where you cloned the repo
 
-# Install frontend dependencies
+### Install frontend dependencies
 npm install
 
 # (Optional) Create Python virtual environment
@@ -106,7 +106,7 @@ Backend — backend/.env:
 ini
 Copy code
 OPENAI_API_KEY=your_openai_api_key_here
-# Neo4j settings are optional if you are not using the Knowledge Graph
+### Neo4j settings are optional if you are not using the Knowledge Graph
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=your_neo4j_password_here
