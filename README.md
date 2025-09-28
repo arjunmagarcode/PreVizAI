@@ -13,9 +13,9 @@
 ---
 
 ## 🔗 Demo Links
-- **Live Demo:** [Add deployed site link here]
-- **Video Walkthrough:** [Add demo video link here]
-- **Presentation Slides:** [Add link to slides]
+- **Live Demo:** 
+- **Video Walkthrough:** 
+- **Presentation Slides:** 
 
 ---
 
@@ -26,7 +26,7 @@ PreVizAI is a modern, HIPAA-conscious healthcare web application built with Next
 Traditional patient intake relies on long, static forms—slow and often incomplete. Doctors spend 15+ minutes on repetitive questions, risking misdiagnosis and frustrating patients.
 
 **Our Solution**  
-PreVizAI replaces traditional forms with a natural, voice-powered patient intake experience. Using Cedar OS Voice Capabilities, patients can speak freely while the interface guides them through a conversational workflow. Responses are captured and structured into a medical report, giving doctors a clear, organized summary before the appointment. Some AI-powered follow-ups are handled by GPT-5, enhancing the conversation with smart, context-aware questions where needed.
+PreVizAI replaces traditional forms with a natural, voice-powered patient intake experience. Using Cedar OS Voice Capabilities, patients can speak freely while the interface guides them through a conversational workflow. Responses are captured and structured into a medical report, giving doctors a clear, organized summary before the appointment. Some AI-powered follow-ups are handled by GPT-4, enhancing the conversation with smart, context-aware questions where needed.
 
 ---
 
