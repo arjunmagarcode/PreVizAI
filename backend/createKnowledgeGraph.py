@@ -33,9 +33,10 @@ TYPE_PRIORITY = {
 # -----------------------------
 def init_client(api_key):
     """Initialize OpenAI client"""
-    print("Initializing OpenAI client...")
+    # print("Initializing OpenAI client...")
     if not api_key:
-        print("Warning: No API key provided!")
+        # print("Warning: No API key provided!")
+        pass
     return OpenAI(api_key=api_key)
 
 # -----------------------------
@@ -44,7 +45,7 @@ def init_client(api_key):
 def similar(a, b):
     """Check if two strings are similar above threshold"""
     ratio = SequenceMatcher(None, a.lower(), b.lower()).ratio()
-    print(f"Comparing '{a}' vs '{b}' -> similarity: {ratio}")
+    # print(f"Comparing '{a}' vs '{b}' -> similarity: {ratio}")
     return ratio >= SIMILARITY_THRESHOLD
 
 def compute_node_size(importance, mention_count=0, node_type="Unknown", alias_count=0):
@@ -54,7 +55,7 @@ def compute_node_size(importance, mention_count=0, node_type="Unknown", alias_co
     norm_aliases = min(1.0, alias_count / 5.0)
     score = 0.5 * importance + 0.25 * norm_aliases + 0.15 * type_priority + 0.10 * norm_mentions
     node_size = MIN_NODE_SIZE + (MAX_NODE_SIZE - MIN_NODE_SIZE) * score
-    print(f"Computed node size for type '{node_type}': {node_size} (importance={importance}, mentions={mention_count}, aliases={alias_count})")
+    # print(f"Computed node size for type '{node_type}': {node_size} (importance={importance}, mentions={mention_count}, aliases={alias_count})")
     return node_size
 
 # -----------------------------
@@ -62,9 +63,9 @@ def compute_node_size(importance, mention_count=0, node_type="Unknown", alias_co
 # -----------------------------
 def generate_graph_nodes(client, graph_prompt, conversation_text):
     """Generate nodes and edges JSON from conversation using LLM"""
-    print("Calling LLM to generate graph nodes...")
+    # print("Calling LLM to generate graph nodes...")
     prompt = f"Conversation: {conversation_text}\n\n{graph_prompt}"
-    print(f"Prompt sent to LLM:\n{prompt}")
+    # print(f"Prompt sent to LLM:\n{prompt}")
 
     try:
         response = client.chat.completions.create(
@@ -72,23 +73,23 @@ def generate_graph_nodes(client, graph_prompt, conversation_text):
             messages=[{"role": "user", "content": prompt}]
         )
         output = response.choices[0].message.content.strip()
-        print(f"Raw LLM output:\n{output}")
+        # print(f"Raw LLM output:\n{output}")
 
         match = re.search(r'(\{.*\})', output, re.DOTALL)
         if match:
             try:
                 graph_json = json.loads(match.group(1))
-                print(f"Parsed JSON from LLM output:\n{json.dumps(graph_json, indent=4)}")
+                # print(f"Parsed JSON from LLM output:\n{json.dumps(graph_json, indent=4)}")
                 return graph_json
             except json.JSONDecodeError as e:
-                print(f"JSONDecodeError: {e}")
+                # print(f"JSONDecodeError: {e}")
                 return {"nodes": [], "edges": []}
 
-        print("Warning: No JSON found in LLM output.")
+        # print("Warning: No JSON found in LLM output.")
         return {"nodes": [], "edges": []}
 
     except Exception as e:
-        print(f"Error calling LLM: {e}")
+        # print(f"Error calling LLM: {e}")
         return {"nodes": [], "edges": []}
 
 # -----------------------------
@@ -99,18 +100,18 @@ def build_knowledge_graph(transcript_text, graph_prompt, api_key, save_path=None
     Build a knowledge graph from a transcript and prompt.
     Optionally save to `save_path`.
     """
-    print("Starting knowledge graph building...")
+    # print("Starting knowledge graph building...")
     client = init_client(api_key)
 
-    print("Generating graph nodes...")
+    # print("Generating graph nodes...")
     graph_data = generate_graph_nodes(client, graph_prompt, transcript_text)
-    print(f"Graph data returned: {graph_data}")
+    # print(f"Graph data returned: {graph_data}")
 
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         with open(save_path, "w") as f:
             json.dump(graph_data, f, indent=4)
-        print(f"Knowledge graph saved to {save_path}")
+        # print(f"Knowledge graph saved to {save_path}")
 
-    print("Knowledge graph building completed.")
+    # print("Knowledge graph building completed.")
     return graph_data

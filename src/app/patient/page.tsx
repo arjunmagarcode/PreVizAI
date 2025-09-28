@@ -12,11 +12,15 @@ export default function PatientIntake() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const patientId = searchParams.get("pid") ?? "1";
-  const patientName = searchParams.get("name") ?? "Patient";
+  // Michael is the demo patient who completes intake
+  const patientId = searchParams.get("pid") ?? "2";
+  const patientName = searchParams.get("name") ?? "Michael Chen";
 
   const voiceStore: any = useCedarStore((s: any) => s.voice);
   const voice = useVoice();
+
+  // --- NEW: persist the latest reportId in state so it survives re-renders
+  const [lastReportId, setLastReportId] = useState<string | null>(null);
 
   // Set the voice endpoint ONCE per page-load with a fresh session id (sid).
   useEffect(() => {
@@ -42,23 +46,22 @@ export default function PatientIntake() {
       .join("\n");
   }
 
-  // --- DEBUG: log transcript whenever messages update ---
-  useEffect(() => {
-    const currentTranscript = buildTranscriptString(messages);
-    console.log("Current transcript stored in frontend:", currentTranscript);
-  }, [messages]);
-
   const canComplete = messages.length > 0;
   const [isCompleted, setIsCompleted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Redirect AFTER we have both: completed=true and a reportId in state
   useEffect(() => {
-    if (!isCompleted) return;
+    if (!isCompleted || !lastReportId) return;
     const timer = setTimeout(() => {
-      router.push(`/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}`);
-    }, 1200);
+      router.push(
+        `/doctor?intake=completed&patientId=${encodeURIComponent(patientId)}&reportId=${encodeURIComponent(
+          lastReportId
+        )}`
+      );
+    }, 900);
     return () => clearTimeout(timer);
-  }, [isCompleted, router, patientId]);
+  }, [isCompleted, lastReportId, router, patientId]);
 
   const handleRequestPermission = async () => {
     try {
@@ -105,7 +108,28 @@ export default function PatientIntake() {
     try {
       const transcript = buildTranscriptString(messages);
       const data = await sendTranscriptToFlask(transcript);
-      console.log("Report from Flask:", data);
+
+      // Generate a reportId and SAVE it in state (critical!)
+      const reportId: string =
+        typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto
+          ? (window.crypto as any).randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      setLastReportId(reportId);
+
+      // Store entire payload for Doctor’s modal (Summary + EMR + Graph + Transcript)
+      const stored = {
+        reportId,
+        patientId,
+        patientName,
+        createdAt: new Date().toISOString(),
+        transcript,
+        insights_report: data.insights_report || {},
+        next_steps: data.next_steps || [],
+        emr_tab: data.emr_tab || null,
+        annotated_graph: data.graph ?? null
+      };
+      localStorage.setItem(`report:${reportId}`, JSON.stringify(stored));
+
       setIsCompleted(true);
     } catch (e: any) {
       alert(e?.message || "Failed to send transcript");
@@ -228,13 +252,13 @@ export default function PatientIntake() {
                 )}
               </div>
 
-                            <button
+              <button
                 onClick={handleCompleteIntake}
                 disabled={!canComplete || isSubmitting}
                 className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${canComplete && !isSubmitting
                   ? "bg-green-500 hover:bg-green-600 text-white"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 {isSubmitting ? (
                   <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full" />
@@ -257,4 +281,3 @@ export default function PatientIntake() {
     </div>
   );
 }
-

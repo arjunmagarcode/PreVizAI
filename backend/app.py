@@ -25,59 +25,48 @@ def add_cors_headers(resp):
 @app.route("/generate_report", methods=["POST", "OPTIONS"])
 def generate_report():
     if request.method == "OPTIONS":
-        print("OPTIONS preflight request received")
         return ("", 204)
 
     data = request.json
-    print("=== /generate_report called ===")
-    print("Received headers:", dict(request.headers))
-    print("Received body:", data)
-
     transcript = data.get("transcript") if data else None
     if not transcript:
-        print("Error: Transcript missing!")
         return jsonify({"error": "Transcript missing"}), 400
 
     # Load EMR data
     emr_path = os.path.join("backend", "exampleEMR.json")
     with open(emr_path, "r") as f:
         emr_data = json.load(f)
-    print("Loaded EMR data successfully")
 
     # Step 1: Build initial knowledge graph
     prompt_path = os.path.join(os.path.dirname(__file__), "LLM_Prompts", "knowledgeGraphPrompt.txt")
     try:
         with open(prompt_path, "r") as f:
             graph_prompt = f.read()
-        print("Prompt loaded successfully:")
-        print(graph_prompt)
     except FileNotFoundError:
-        print(f"File not found: {prompt_path}")    
-    
+        graph_prompt = ""
+
     api_key = os.getenv("OPENAI_API_KEY")
-    print("Calling build_knowledge_graph()...")
     initial_graph = build_knowledge_graph(transcript, graph_prompt, api_key)
-    print("Initial knowledge graph:", initial_graph)
 
     # Step 2: Revise / annotate graph
-    print("Calling revise_knowledge_graph()...")
     annotated_graph = revise_knowledge_graph(initial_graph, emr_data, transcript)
-    print("Annotated graph:", annotated_graph)
 
-    # Step 3: Generate insights report and next steps
-    print("Calling generate_patient_report()...")
+    # Step 3: Generate (summary_tab + emr_tab); keep legacy response keys
     report = generate_patient_report(annotated_graph, emr_data, transcript)
-    print("Generated report successfully")
-    print("Report summary keys:", list(report.keys()))
+
+    summary_tab = report.get("summary_tab", {})
+    emr_tab = report.get("emr_tab", {})
+    next_steps = summary_tab.get("next_best_actions", [])
 
     return jsonify({
         "message": "Report generated successfully",
-        "insights_report": report.get("insights_report"),
-        "next_steps": report.get("next_steps"),
-        "graph": report.get("annotated_graph")
+        "insights_report": summary_tab,            # summary tab object (legacy key)
+        "next_steps": next_steps,                  # convenience array
+        "graph": report.get("annotated_graph"),    # unchanged
+        "emr_tab": emr_tab                         # NEW: EMR insights tab
     })
 
 if __name__ == "__main__":
     if not os.getenv("OPENAI_API_KEY"):
-        print("Warning: OPENAI_API_KEY not set in environment.")
+        pass
     app.run(debug=True, host="0.0.0.0", port=5000)

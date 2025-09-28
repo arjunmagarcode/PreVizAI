@@ -19,6 +19,67 @@ A modern healthcare web application built with Next.js and Cedar OS for HackGT's
 4. **Report Generation**: Conversation is processed into structured medical report
 5. **Doctor Review**: Doctor receives notification and can view comprehensive patient report
 
+## 🚀 Quick Start & Installation
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Python 3.11+
+- OpenAI API key
+- Neo4j Database (optional, for advanced knowledge graph features)
+
+### Installation Steps
+
+1. **Install frontend dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Python backend is already configured with virtual environment**
+   - All Python dependencies are installed: Flask, OpenAI, Neo4j driver, etc.
+   - Virtual environment is located at `.venv/`
+
+3. **Configure environment variables:**
+
+   **Frontend (.env.local):**
+   ```env
+   NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+   NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+   ```
+
+   **Backend (backend/.env):**
+   ```env
+   OPENAI_API_KEY=your_openai_api_key_here
+   NEO4J_URI=bolt://localhost:7687
+   NEO4J_USER=neo4j
+   NEO4J_PASSWORD=your_neo4j_password_here
+   FLASK_ENV=development
+   FLASK_DEBUG=True
+   ```
+
+### Running the Application
+
+1. **Start the backend server:**
+   ```bash
+   cd backend
+   python run_server.py
+   ```
+   Backend available at: `http://localhost:5000`
+
+2. **Start the frontend (in a new terminal):**
+   ```bash
+   npm run dev
+   ```
+   Frontend available at: `http://localhost:3000`
+
+## 🔧 Architecture & Tech Stack
+
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS, Cedar OS
+- **Backend**: Flask Python API with AI processing
+- **Voice**: Cedar OS with OpenAI GPT-4 integration
+- **Database**: Neo4j (optional for knowledge graphs)
+- **AI**: OpenAI API for conversation processing and report generation
+
 ## 🚀 Technology Stack
 
 - **Next.js 15** with App Router and TypeScript

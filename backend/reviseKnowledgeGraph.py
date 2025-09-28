@@ -1,6 +1,10 @@
 # backend/reviseKnowledgeGraph.py
 import json
-from neo4j import GraphDatabase
+try:
+    from neo4j import GraphDatabase
+except ImportError:
+    # Neo4j driver not available
+    GraphDatabase = None
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
@@ -35,7 +39,22 @@ NODE_COLORS = {
 BASE_SIZE = 50
 IMPORTANCE_SCALE = 50
 
-driver = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
+# Try to connect to Neo4j, but make it optional
+try:
+    if GraphDatabase is None:
+        raise ImportError("Neo4j driver not available")
+    driver = GraphDatabase.driver(NEO4J_URI, auth=NEO4J_AUTH)
+    # Test the connection
+    with driver.session() as session:
+        session.run("RETURN 1")
+    NEO4J_AVAILABLE = True
+    # Neo4j connection established
+    pass
+except Exception as e:
+    driver = None
+    NEO4J_AVAILABLE = False
+    # Neo4j not available, continuing without database
+    pass
 
 # -----------------------------
 # HELPER FUNCTIONS
@@ -98,6 +117,10 @@ def annotate_graph_llm(graph_data, emr_data, transcript):
 
 def update_graph(graph_data):
     """Update Neo4j graph with nodes and edges."""
+    if not NEO4J_AVAILABLE or driver is None:
+        # Skipping Neo4j update (database not available)
+        return
+    
     with driver.session() as session:
         for node in graph_data.get("nodes", []):
             node_type = node.get("type", "Unknown")

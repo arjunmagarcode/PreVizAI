@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Bell, Users, Send, ArrowLeft, CheckCircle, Clock, AlertCircle, Eye
+  Bell, Users, Send, ArrowLeft, CheckCircle, Clock, AlertCircle, Eye, X
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -27,19 +27,29 @@ interface Notification {
   patientId: string;
 }
 
+type ReportPayload = {
+  reportId: string;
+  patientId: string;
+  patientName: string;
+  createdAt: string;
+  transcript?: string;
+  insights_report?: any;
+  next_steps?: string[];
+  emr_tab?: any;
+  annotated_graph?: any;
+};
+
+function makeId(): string {
+  if (typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto) {
+    return (window.crypto as any).randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function DoctorDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Generate unique IDs safely to avoid duplicate React keys
-  const makeId = () => {
-    if (typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto) {
-      return window.crypto.randomUUID();
-    }
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  };
-
-  // Keep track of which completed patientId we have already processed
   const processedCompleted = useRef<Set<string>>(new Set());
 
   const [patients, setPatients] = useState<Patient[]>([
@@ -53,7 +63,7 @@ export default function DoctorDashboard() {
       chiefComplaint: "Persistent headaches and dizziness",
     },
     {
-      id: "2",
+      id: "2", // Michael completes intake in your demo
       name: "Michael Chen",
       age: 45,
       appointmentDate: "2025-09-28T14:00:00",
@@ -78,22 +88,49 @@ export default function DoctorDashboard() {
     },
   ]);
 
-  // Map patientId -> reportId(s)
+  // patientId -> reportId
   const [reportMap, setReportMap] = useState<Record<string, string>>({});
 
-  // Simple toast UI
+  // Modal state
+  const [openReport, setOpenReport] = useState<ReportPayload | null>(null);
+  const [tab, setTab] = useState<"summary" | "emr" | "graph">("summary");
+
+  // Toast
   const [toast, setToast] = useState<{ show: boolean; text: string } | null>(null);
 
-  // Read params when redirected after intake completion
-  const completedParam = searchParams.get("intake"); // "completed" or null
+  // Read params on redirect after intake completion
+  const completedParam = searchParams.get("intake");
   const completedPatientId = searchParams.get("patientId");
   const reportIdFromQuery = searchParams.get("reportId");
+
+  // Safety net: on load, scan localStorage for any saved reports and map to patients
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const map: Record<string, { reportId: string; createdAt: number }> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i) || "";
+      if (!key.startsWith("report:")) continue;
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const data = JSON.parse(raw) as ReportPayload;
+        if (!data.patientId || !data.reportId) continue;
+        const ts = Date.parse(data.createdAt || "") || 0;
+        // keep the latest report for each patient
+        if (!map[data.patientId] || ts > map[data.patientId].createdAt) {
+          map[data.patientId] = { reportId: data.reportId, createdAt: ts };
+        }
+      } catch { }
+    }
+    if (Object.keys(map).length > 0) {
+      setReportMap(Object.fromEntries(Object.entries(map).map(([pid, v]) => [pid, v.reportId])));
+    }
+  }, []);
 
   useEffect(() => {
     if (completedParam === "completed" && completedPatientId && !processedCompleted.current.has(completedPatientId)) {
       const p = patients.find((x) => x.id === completedPatientId);
       if (p) {
-        // Ensure this completion is only processed once per patientId
         processedCompleted.current.add(completedPatientId);
 
         if (p.status !== "completed") {
@@ -106,6 +143,7 @@ export default function DoctorDashboard() {
           );
         }
 
+        // If the reportId came via URL, record it immediately
         if (reportIdFromQuery) {
           setReportMap((prev) => ({ ...prev, [p.id]: reportIdFromQuery }));
         }
@@ -134,10 +172,7 @@ export default function DoctorDashboard() {
 
   const sendIntakeRequest = async (patientId: string) => {
     try {
-      // Find patient first to carry context into navigation
       const patient = patients.find((p) => p.id === patientId);
-
-      // Simulate network delay then update local state
       await new Promise((r) => setTimeout(r, 600));
       setPatients((prev) =>
         prev.map((p) => (p.id === patientId ? { ...p, status: "pending" } : p))
@@ -154,15 +189,8 @@ export default function DoctorDashboard() {
           },
           ...prev,
         ]);
-
-        // Navigate directly to the patient intake with context
-        router.push(
-          `/patient?pid=${encodeURIComponent(patient.id)}&name=${encodeURIComponent(
-            patient.name
-          )}`
-        );
+        router.push(`/patient?pid=${encodeURIComponent(patient.id)}&name=${encodeURIComponent(patient.name)}`);
       } else {
-        // Fallback navigation without name if patient not found
         router.push(`/patient?pid=${encodeURIComponent(patientId)}`);
       }
     } catch {
@@ -195,6 +223,23 @@ export default function DoctorDashboard() {
         return "Unknown";
     }
   };
+
+  function loadReport(reportId: string): ReportPayload | null {
+    try {
+      const raw = localStorage.getItem(`report:${reportId}`);
+      return raw ? (JSON.parse(raw) as ReportPayload) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function GraphViewer({ graph }: { graph: any }) {
+    return (
+      <pre className="text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-60">
+        {JSON.stringify(graph, null, 2)}
+      </pre>
+    );
+  }
 
   const highlightId = completedParam === "completed" ? completedPatientId : null;
 
@@ -243,12 +288,11 @@ export default function DoctorDashboard() {
             <div className="divide-y">
               {patients.map((patient) => {
                 const isHighlighted = highlightId && patient.id === highlightId;
-                const reportId = reportMap[patient.id]; // if present, show "View Report"
+                const reportId = reportMap[patient.id];
                 return (
                   <div
                     key={patient.id}
-                    className={`p-6 hover:bg-gray-50 transition-colors ${isHighlighted ? "bg-green-50" : ""
-                      }`}
+                    className={`p-6 hover:bg-gray-50 transition-colors ${isHighlighted ? "bg-green-50" : ""}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -256,24 +300,30 @@ export default function DoctorDashboard() {
                           <h3 className="font-medium text-gray-900">{patient.name}</h3>
                           <div className="flex items-center space-x-1">
                             {getStatusIcon(patient.status)}
-                            <span className="text-sm text-gray-600">
-                              {getStatusText(patient.status)}
-                            </span>
+                            <span className="text-sm text-gray-600">{getStatusText(patient.status)}</span>
                           </div>
 
-                          {/* Show “View Report” when intake is completed AND we have a reportId */}
+                          {/* View Report chip when completed and report available */}
                           {patient.status === "completed" && reportId && (
-                            <Link
-                              href={`/doctor/report/${encodeURIComponent(reportId)}`}
+                            <button
+                              onClick={() => {
+                                const rep = loadReport(reportId);
+                                if (rep) {
+                                  setOpenReport(rep);
+                                  setTab("summary");
+                                } else {
+                                  alert("Report not found. Please try again.");
+                                }
+                              }}
                               className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
                               aria-label={`View report for ${patient.name}`}
                             >
                               <Eye className="h-3.5 w-3.5 mr-1" />
                               View Report
-                            </Link>
+                            </button>
                           )}
 
-                          {/* If completed but no report yet, still show a disabled button (placeholder). */}
+                          {/* Placeholder if completed but not yet stored */}
                           {patient.status === "completed" && !reportId && (
                             <button
                               type="button"
@@ -287,7 +337,6 @@ export default function DoctorDashboard() {
                             </button>
                           )}
 
-                          {/* Small “Intake complete” pill for freshly completed patient */}
                           {isHighlighted && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -299,9 +348,7 @@ export default function DoctorDashboard() {
                           <p>Age: {patient.age}</p>
                           <p>Appointment: {new Date(patient.appointmentDate).toLocaleString()}</p>
                           {patient.chiefComplaint && (
-                            <p className="text-blue-600">
-                              Chief Complaint: {patient.chiefComplaint}
-                            </p>
+                            <p className="text-blue-600">Chief Complaint: {patient.chiefComplaint}</p>
                           )}
                           {patient.lastIntake && (
                             <p className="text-gray-500 text-xs">
@@ -321,7 +368,6 @@ export default function DoctorDashboard() {
                             Send Intake
                           </button>
                         )}
-                        {/* No generate button here anymore */}
                       </div>
                     </div>
                   </div>
@@ -347,9 +393,7 @@ export default function DoctorDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-gray-900 mb-1">{n.message}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(n.timestamp).toLocaleString()}
-                        </p>
+                        <p className="text-xs text-gray-500">{new Date(n.timestamp).toLocaleString()}</p>
                         <div
                           className={`inline-block px-2 py-1 rounded-full text-xs mt-2 ${n.type === "completed"
                             ? "bg-green-100 text-green-800"
@@ -360,15 +404,22 @@ export default function DoctorDashboard() {
                         </div>
                       </div>
 
-                      {/* Quick action when completed AND we know the reportId */}
                       {n.type === "completed" && patient?.status === "completed" && reportId && (
-                        <Link
-                          href={`/doctor/report/${encodeURIComponent(reportId)}`}
+                        <button
+                          onClick={() => {
+                            const rep = loadReport(reportId);
+                            if (rep) {
+                              setOpenReport(rep);
+                              setTab("summary");
+                            } else {
+                              alert("Report not found. Please try again.");
+                            }
+                          }}
                           className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
                         >
                           <Eye className="h-3.5 w-3.5 mr-1" />
                           View Report
-                        </Link>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -381,6 +432,210 @@ export default function DoctorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {openReport && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setOpenReport(null)} />
+          <div className="relative z-50 w-full max-w-3xl bg-white rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Report — {openReport.patientName || "Patient"}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Created {new Date(openReport.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setOpenReport(null)}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="px-5 pt-3 flex items-center gap-2">
+              <button
+                onClick={() => setTab("summary")}
+                className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "summary" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+              >
+                Summary
+              </button>
+              <button
+                onClick={() => setTab("emr")}
+                className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "emr" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+              >
+                EMR Insights
+              </button>
+              <button
+                onClick={() => setTab("graph")}
+                className={`px-3 py-2 rounded-lg text-sm font-medium ${tab === "graph" ? "bg-blue-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+              >
+                Graph
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+              {tab === "summary" && (
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">Visit Focus</h3>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    {(() => {
+                      const sum = openReport.insights_report || {};
+                      const vf = sum.visit_focus || {};
+                      const assoc = (vf.associated || {}) as { positives?: string[]; negatives?: string[] };
+
+                      return (
+                        <div className="space-y-3 text-sm text-gray-800">
+                          <div><span className="font-medium">Chief complaint:</span> {vf.chief_complaint || "Not stated"}</div>
+                          <div><span className="font-medium">Onset / duration / severity:</span> {vf.onset_duration_severity || "Not stated"}</div>
+
+                          {(assoc.positives?.length || assoc.negatives?.length) && (
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Associated ( + )</div>
+                                <ul className="list-disc pl-5 space-y-1">{(assoc.positives || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
+                              </div>
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Associated ( − )</div>
+                                <ul className="list-disc pl-5 space-y-1">{(assoc.negatives || []).map((s, i) => <li key={i}>{s}</li>)}</ul>
+                              </div>
+                            </div>
+                          )}
+
+                          {sum.concise_summary && (
+                            <div className="rounded-lg bg-gray-50 p-3">
+                              <div className="text-xs uppercase text-gray-500 mb-1">Concise Summary</div>
+                              <div>{sum.concise_summary}</div>
+                            </div>
+                          )}
+
+                          {Array.isArray(sum.quick_checks) && sum.quick_checks.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">Today’s Quick Checks</div>
+                              <ul className="list-disc pl-5 space-y-1">{sum.quick_checks.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+
+                          {Array.isArray(sum.next_best_actions) && sum.next_best_actions.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">Next Best Actions</div>
+                              <ul className="list-disc pl-5 space-y-1">{sum.next_best_actions.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+
+                          {Array.isArray(sum.transcript_snippets) && sum.transcript_snippets.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">Transcript Snippets</div>
+                              <ul className="list-disc pl-5 space-y-1">{sum.transcript_snippets.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {tab === "emr" && (
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">EMR Insights</h3>
+                  </div>
+                  <div className="p-5 space-y-6 text-sm text-gray-800">
+                    {(() => {
+                      const emr = openReport.emr_tab || {};
+                      const rh = emr.relevant_history || {};
+                      return (
+                        <>
+                          {(rh.conditions?.length || rh.meds?.length || rh.allergies_alerts?.length) && (
+                            <div className="grid sm:grid-cols-3 gap-4">
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Conditions</div>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  {(rh.conditions || []).map((c: any, i: number) => <li key={i}>{c.name} — {c.status}</li>)}
+                                </ul>
+                              </div>
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Meds (relevant)</div>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  {(rh.meds || []).map((m: any, i: number) => <li key={i}>{m.name} — {m.purpose}</li>)}
+                                </ul>
+                              </div>
+                              <div>
+                                <div className="text-xs uppercase text-gray-500 mb-1">Allergies / Alerts</div>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  {(rh.allergies_alerts || []).map((a: string, i: number) => <li key={i}>{a}</li>)}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
+
+                          {emr.risk_flags?.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">Risk Flags</div>
+                              <ul className="list-disc pl-5 space-y-1">{emr.risk_flags.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+
+                          {emr.trend_insights?.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">Trend Insights</div>
+                              <ul className="list-disc pl-5 space-y-1">{emr.trend_insights.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+
+                          {emr.care_gaps?.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">Care Gaps</div>
+                              <ul className="list-disc pl-5 space-y-1">{emr.care_gaps.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+
+                          {emr.emr_transcript_conflicts?.length > 0 && (
+                            <div>
+                              <div className="text-xs uppercase text-gray-500 mb-1">EMR–Transcript Conflicts</div>
+                              <ul className="list-disc pl-5 space-y-1">{emr.emr_transcript_conflicts.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {tab === "graph" && (
+                <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">Annotated Graph</h3>
+                  </div>
+                  <div className="p-5">
+                    {openReport.annotated_graph ? (
+                      <GraphViewer graph={openReport.annotated_graph} />
+                    ) : (
+                      <p className="text-sm text-gray-500">No graph provided.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <details className="mt-2">
+                <summary className="text-sm text-gray-600 cursor-pointer">Show transcript</summary>
+                <pre className="mt-2 text-xs bg-gray-50 p-3 rounded-lg overflow-auto max-h-56">
+                  {openReport.transcript || "No transcript captured."}
+                </pre>
+              </details>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
