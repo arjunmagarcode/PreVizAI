@@ -1,21 +1,26 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell, Users, Send, ArrowLeft, CheckCircle, Clock, AlertCircle, Eye, X, Sparkles, FileText
+  Bell,
+  Users,
+  Send,
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Eye,
+  X,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import KnowledgeGraph from "@/components/KnowledgeGraph";
 
-// Cedar hooks (still used for state/context publishing)
 import { useRegisterState, useCedarStore } from "cedar-os";
-
-// EMR helper (kept for finding relevant refs)
 import { findEmrEvidence } from "@/cedar/agents/emrExplain";
-
-// NEW: OpenAI explain helper
 import { explainInsightWithLLM } from "@/lib/explainInsight";
 
 const typeColors: Record<string, string> = {
@@ -23,7 +28,7 @@ const typeColors: Record<string, string> = {
   Condition: "#D9534F",
   Trigger: "#F0AD4E",
   Cause: "#F0AD4E",
-  Medication: "#5CB85C"
+  Medication: "#5CB85C",
 };
 
 interface Patient {
@@ -59,13 +64,16 @@ type ReportPayload = {
 };
 
 function makeId(): string {
-  if (typeof window !== "undefined" && window.crypto && "randomUUID" in window.crypto) {
+  if (
+    typeof window !== "undefined" &&
+    window.crypto &&
+    "randomUUID" in window.crypto
+  ) {
     return (window.crypto as any).randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** Drawer UI */
 function EvidenceDrawer({
   open,
   onClose,
@@ -87,14 +95,12 @@ function EvidenceDrawer({
 }) {
   if (!open) return null;
 
-  // Keep paragraph formatting for the answer
-  const paragraphAnswer =
-    (cedarAnswer || "")
-      .replace(/^\s*[-•]\s*/gm, "")
-      .replace(/\n{2,}/g, "\n")
-      .replace(/\n/g, " ")
-      .replace(/\s\s+/g, " ")
-      .trim();
+  const paragraphAnswer = (cedarAnswer || "")
+    .replace(/^\s*[-•]\s*/gm, "")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/\n/g, " ")
+    .replace(/\s\s+/g, " ")
+    .trim();
 
   return (
     <div className="fixed inset-0 z-50">
@@ -103,21 +109,32 @@ function EvidenceDrawer({
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <div>
             <div className="text-xs text-gray-500">Evidence for</div>
-            <div className="text-sm font-semibold text-gray-900 line-clamp-2">{selectedText}</div>
+            <div className="text-sm font-semibold text-gray-900 line-clamp-2">
+              {selectedText}
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded hover:bg-gray-100" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="p-2 rounded hover:bg-gray-100"
+            aria-label="Close"
+          >
             <X className="h-5 w-5 text-gray-600" />
           </button>
         </div>
 
         <div className="p-4 space-y-5 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-gray-600">Ask for a quick rationale</div>
+            <div className="text-xs text-gray-600">
+              Ask for a quick rationale
+            </div>
             <button
               onClick={onAskCedar}
               disabled={!cedarAvailable || cedarBusy}
-              className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded text-xs ${cedarAvailable ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                }`}
+              className={`inline-flex items-center justify-center px-2.5 py-1.5 rounded text-xs ${
+                cedarAvailable
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
+              }`}
               title={cedarAvailable ? "Ask Copilot" : "AI not initialized"}
             >
               <Sparkles className="h-4 w-4" />
@@ -131,9 +148,13 @@ function EvidenceDrawer({
           )}
 
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 font-semibold">EMR References</div>
+            <div className="text-[11px] uppercase tracking-wide text-gray-500 mb-2 font-semibold">
+              EMR References
+            </div>
             {emrHits.length === 0 ? (
-              <div className="text-sm text-gray-700">No obvious EMR references.</div>
+              <div className="text-sm text-gray-700">
+                No obvious EMR references.
+              </div>
             ) : (
               <ul className="space-y-2">
                 {emrHits.map((e, i) => (
@@ -145,7 +166,9 @@ function EvidenceDrawer({
                       <FileText className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[11px] font-mono text-gray-700 truncate">{e.path}</div>
+                      <div className="text-[11px] font-mono text-gray-700 truncate">
+                        {e.path}
+                      </div>
                       <div className="mt-1 text-gray-900">{e.value}</div>
                     </div>
                   </li>
@@ -159,8 +182,7 @@ function EvidenceDrawer({
   );
 }
 
-/** ---------- MAIN PAGE ---------- */
-export default function DoctorDashboard() {
+function DoctorDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -177,7 +199,7 @@ export default function DoctorDashboard() {
       chiefComplaint: "Persistent headaches and dizziness",
     },
     {
-      id: "2", // Michael completes intake in your demo
+      id: "2",
       name: "Michael Chen",
       age: 45,
       appointmentDate: "2025-09-28T14:00:00",
@@ -202,60 +224,78 @@ export default function DoctorDashboard() {
     },
   ]);
 
-  // patientId -> reportId
   const [reportMap, setReportMap] = useState<Record<string, string>>({});
-
-  // Report modal state
   const [openReport, setOpenReport] = useState<ReportPayload | null>(null);
   const [tab, setTab] = useState<"summary" | "emr" | "graph">("summary");
 
-  // Drawer + AI state
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedText, setSelectedText] = useState("");
   const [emrHits, setEmrHits] = useState<{ path: string; value: string }[]>([]);
   const [cedarAnswer, setCedarAnswer] = useState<string | null>(null);
   const [cedarBusy, setCedarBusy] = useState(false);
 
-  // Cedar store (kept for context publishing, optional)
   const cedarStore: any = useCedarStore();
-  const cedarAvailable = true; // Button enabled (OpenAI route used under the hood)
+  const cedarAvailable = true;
 
-  // Publish selected text & emr slice (Cedar context)
-  useRegisterState({ key: "selectedText", value: selectedText, description: "Doctor-selected EMR insight text" });
+  useRegisterState({
+    key: "selectedText",
+    value: selectedText,
+    description: "Doctor-selected EMR insight text",
+  });
+
   const emrSlice = useMemo(() => openReport?.emr_tab || {}, [openReport]);
-  useRegisterState({ key: "emrData", value: emrSlice, description: "Report EMR data for context" });
+
+  useRegisterState({
+    key: "emrData",
+    value: emrSlice,
+    description: "Report EMR data for context",
+  });
 
   const completedParam = searchParams.get("intake");
   const completedPatientId = searchParams.get("patientId");
   const reportIdFromQuery = searchParams.get("reportId");
 
-  // Load reports from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
+
     const map: Record<string, { reportId: string; createdAt: number }> = {};
+
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i) || "";
       if (!key.startsWith("report:")) continue;
+
       try {
         const raw = localStorage.getItem(key);
         if (!raw) continue;
+
         const data = JSON.parse(raw) as ReportPayload;
         if (!data.patientId || !data.reportId) continue;
+
         const ts = Date.parse(data.createdAt || "") || 0;
+
         if (!map[data.patientId] || ts > map[data.patientId].createdAt) {
           map[data.patientId] = { reportId: data.reportId, createdAt: ts };
         }
-      } catch { }
+      } catch {}
     }
+
     if (Object.keys(map).length > 0) {
-      setReportMap(Object.fromEntries(Object.entries(map).map(([pid, v]) => [pid, v.reportId])));
+      setReportMap(
+        Object.fromEntries(
+          Object.entries(map).map(([pid, v]) => [pid, v.reportId])
+        )
+      );
     }
   }, []);
 
-  // Handle redirect after intake completion
   useEffect(() => {
-    if (completedParam === "completed" && completedPatientId && !processedCompleted.current.has(completedPatientId)) {
+    if (
+      completedParam === "completed" &&
+      completedPatientId &&
+      !processedCompleted.current.has(completedPatientId)
+    ) {
       const p = patients.find((x) => x.id === completedPatientId);
+
       if (p) {
         processedCompleted.current.add(completedPatientId);
 
@@ -290,7 +330,9 @@ export default function DoctorDashboard() {
   const sendIntakeRequest = async (patientId: string) => {
     try {
       const patient = patients.find((p) => p.id === patientId);
+
       await new Promise((r) => setTimeout(r, 600));
+
       setPatients((prev) =>
         prev.map((p) => (p.id === patientId ? { ...p, status: "pending" } : p))
       );
@@ -306,7 +348,12 @@ export default function DoctorDashboard() {
           },
           ...prev,
         ]);
-        router.push(`/patient?pid=${encodeURIComponent(patient.id)}&name=${encodeURIComponent(patient.name)}`);
+
+        router.push(
+          `/patient?pid=${encodeURIComponent(patient.id)}&name=${encodeURIComponent(
+            patient.name
+          )}`
+        );
       } else {
         router.push(`/patient?pid=${encodeURIComponent(patientId)}`);
       }
@@ -352,6 +399,7 @@ export default function DoctorDashboard() {
 
   function openExplainFor(text: string) {
     if (!openReport) return;
+
     setSelectedText(text);
     setCedarAnswer(null);
     setEmrHits(findEmrEvidence(openReport.emr_tab, text));
@@ -360,7 +408,9 @@ export default function DoctorDashboard() {
 
   async function onAskCedar() {
     if (!openReport) return;
+
     setCedarBusy(true);
+
     try {
       const { answer } = await explainInsightWithLLM(selectedText, emrHits);
       setCedarAnswer(answer);
@@ -371,19 +421,22 @@ export default function DoctorDashboard() {
     }
   }
 
-  const highlightId = completedParam === "completed" ? completedPatientId : null;
+  const highlightId =
+    completedParam === "completed" ? completedPatientId : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Link href="/" className="text-gray-500 hover:text-gray-700">
               <ArrowLeft className="h-6 w-6" />
             </Link>
-            <h1 className="text-xl font-semibold text-gray-900">Doctor Dashboard</h1>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Doctor Dashboard
+            </h1>
           </div>
+
           <div className="flex items-center space-x-4 relative">
             <div className="relative">
               <Bell className="h-6 w-6 text-gray-600" />
@@ -399,7 +452,6 @@ export default function DoctorDashboard() {
 
       <div className="max-w-6xl mx-auto p-6">
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Patient List */}
           <div className="lg:col-span-2 bg-white rounded-xl shadow-lg">
             <div className="p-6 border-b">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -407,28 +459,38 @@ export default function DoctorDashboard() {
                 Upcoming Appointments
               </h2>
             </div>
+
             <div className="divide-y">
               {patients.map((patient) => {
                 const isHighlighted = highlightId && patient.id === highlightId;
                 const reportId = reportMap[patient.id];
+
                 return (
                   <div
                     key={patient.id}
-                    className={`p-6 hover:bg-gray-50 transition-colors ${isHighlighted ? "bg-green-50" : ""}`}
+                    className={`p-6 hover:bg-gray-50 transition-colors ${
+                      isHighlighted ? "bg-green-50" : ""
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center flex-wrap gap-3 mb-2">
-                          <h3 className="font-semibold text-gray-900">{patient.name}</h3>
+                          <h3 className="font-semibold text-gray-900">
+                            {patient.name}
+                          </h3>
+
                           <div className="flex items-center space-x-1">
                             {getStatusIcon(patient.status)}
-                            <span className="text-sm text-gray-700">{getStatusText(patient.status)}</span>
+                            <span className="text-sm text-gray-700">
+                              {getStatusText(patient.status)}
+                            </span>
                           </div>
 
                           {patient.status === "completed" && reportId && (
                             <button
                               onClick={() => {
                                 const rep = loadReport(reportId);
+
                                 if (rep) {
                                   setOpenReport(rep);
                                   setTab("summary");
@@ -464,17 +526,30 @@ export default function DoctorDashboard() {
                             </span>
                           )}
                         </div>
+
                         <div className="text-sm text-gray-700 space-y-1">
-                          <p><span className="font-semibold">Age:</span> {patient.age}</p>
-                          <p><span className="font-semibold">Appointment:</span> {new Date(patient.appointmentDate).toLocaleString()}</p>
+                          <p>
+                            <span className="font-semibold">Age:</span>{" "}
+                            {patient.age}
+                          </p>
+                          <p>
+                            <span className="font-semibold">Appointment:</span>{" "}
+                            {new Date(patient.appointmentDate).toLocaleString()}
+                          </p>
+
                           {patient.chiefComplaint && (
                             <p className="text-blue-700">
-                              <span className="font-semibold">Chief Complaint:</span> {patient.chiefComplaint}
+                              <span className="font-semibold">
+                                Chief Complaint:
+                              </span>{" "}
+                              {patient.chiefComplaint}
                             </p>
                           )}
+
                           {patient.lastIntake && (
                             <p className="text-gray-500 text-xs">
-                              Last Intake: {new Date(patient.lastIntake).toLocaleString()}
+                              Last Intake:{" "}
+                              {new Date(patient.lastIntake).toLocaleString()}
                             </p>
                           )}
                         </div>
@@ -498,7 +573,6 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Notifications Panel */}
           <div className="bg-white rounded-xl shadow-lg">
             <div className="p-6 border-b">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -506,60 +580,76 @@ export default function DoctorDashboard() {
                 Recent Activity
               </h2>
             </div>
+
             <div className="divide-y max-h-96 overflow-y-auto">
               {notifications.map((n) => {
                 const patient = patients.find((p) => p.id === n.patientId);
                 const reportId = reportMap[n.patientId];
+
                 return (
                   <div key={n.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-900 mb-1">{n.message}</p>
-                        <p className="text-xs text-gray-500">{new Date(n.timestamp).toLocaleString()}</p>
+                        <p className="text-sm text-gray-900 mb-1">
+                          {n.message}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(n.timestamp).toLocaleString()}
+                        </p>
                         <div
-                          className={`inline-block px-2 py-1 rounded-full text-xs mt-2 ${n.type === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                            }`}
+                          className={`inline-block px-2 py-1 rounded-full text-xs mt-2 ${
+                            n.type === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
                         >
                           {n.type === "completed" ? "Completed" : "Sent"}
                         </div>
                       </div>
 
-                      {n.type === "completed" && patient?.status === "completed" && reportId && (
-                        <button
-                          onClick={() => {
-                            const rep = loadReport(reportId);
-                            if (rep) {
-                              setOpenReport(rep);
-                              setTab("summary");
-                            } else {
-                              alert("Report not found. Please try again.");
-                            }
-                          }}
-                          className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5 mr-1" />
-                          View Report
-                        </button>
-                      )}
+                      {n.type === "completed" &&
+                        patient?.status === "completed" &&
+                        reportId && (
+                          <button
+                            onClick={() => {
+                              const rep = loadReport(reportId);
+
+                              if (rep) {
+                                setOpenReport(rep);
+                                setTab("summary");
+                              } else {
+                                alert("Report not found. Please try again.");
+                              }
+                            }}
+                            className="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" />
+                            View Report
+                          </button>
+                        )}
                     </div>
                   </div>
                 );
               })}
+
               {notifications.length === 0 && (
-                <div className="p-4 text-center text-gray-500">No recent activity</div>
+                <div className="p-4 text-center text-gray-500">
+                  No recent activity
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Report Modal */}
       {openReport && (
         <>
           <div className="fixed inset-0 z-40 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setOpenReport(null)} />
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setOpenReport(null)}
+            />
+
             <div className="relative z-50 w-full max-w-4xl bg-white rounded-2xl shadow-2xl">
               <div className="flex items-center justify-between px-6 py-5 border-b">
                 <div>
@@ -570,6 +660,7 @@ export default function DoctorDashboard() {
                     Created {new Date(openReport.createdAt).toLocaleString()}
                   </p>
                 </div>
+
                 <button
                   onClick={() => setOpenReport(null)}
                   className="p-2 rounded-lg hover:bg-gray-100"
@@ -579,52 +670,71 @@ export default function DoctorDashboard() {
                 </button>
               </div>
 
-              {/* Tabs */}
               <div className="px-6 pt-3 flex items-center gap-2">
                 <button
                   onClick={() => setTab("summary")}
-                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${tab === "summary" ? "bg-blue-600 text-white" : "text-gray-800 hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                    tab === "summary"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-800 hover:bg-gray-100"
+                  }`}
                 >
                   Summary
                 </button>
+
                 <button
                   onClick={() => setTab("emr")}
-                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${tab === "emr" ? "bg-blue-600 text-white" : "text-gray-800 hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                    tab === "emr"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-800 hover:bg-gray-100"
+                  }`}
                 >
                   EMR Insights
                 </button>
+
                 <button
                   onClick={() => setTab("graph")}
-                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${tab === "graph" ? "bg-blue-600 text-white" : "text-gray-800 hover:bg-gray-100"
-                    }`}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                    tab === "graph"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-800 hover:bg-gray-100"
+                  }`}
                 >
                   Graph
                 </button>
               </div>
 
-              {/* Body */}
               <div className="p-6 space-y-6 max-h-[72vh] overflow-y-auto">
                 {tab === "summary" && (
                   <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
                     <div className="px-6 py-4 border-b border-gray-100">
-                      <h3 className="text-base font-bold text-gray-900">Visit Focus</h3>
+                      <h3 className="text-base font-bold text-gray-900">
+                        Visit Focus
+                      </h3>
                       <p className="text-xs text-gray-600 mt-1">
-                        Fast, scannable overview of today’s visit (AI-assisted).
+                        Fast, scannable overview of today’s visit.
                       </p>
                     </div>
+
                     <div className="p-6 space-y-5 text-sm text-gray-900">
                       {(() => {
                         const sum = openReport.insights_report || {};
                         const vf = sum.visit_focus || {};
-                        const assoc = (vf.associated || {}) as { positives?: string[]; negatives?: string[] };
+                        const assoc = (vf.associated || {}) as {
+                          positives?: string[];
+                          negatives?: string[];
+                        };
 
                         return (
                           <>
                             <div>
-                              <span className="font-semibold">Chief Complaint:</span>{" "}
-                              <span className="text-gray-800">{vf.chief_complaint || "Not stated"}</span>
+                              <span className="font-semibold">
+                                Chief Complaint:
+                              </span>{" "}
+                              <span className="text-gray-800">
+                                {vf.chief_complaint || "Not stated"}
+                              </span>
                             </div>
 
                             {sum.concise_summary && (
@@ -632,27 +742,39 @@ export default function DoctorDashboard() {
                                 <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
                                   Concise Summary
                                 </div>
-                                <div className="text-gray-900">{sum.concise_summary}</div>
+                                <div className="text-gray-900">
+                                  {sum.concise_summary}
+                                </div>
                               </div>
                             )}
 
                             <div>
-                              <span className="font-semibold">Onset / Duration / Severity:</span>{" "}
-                              <span className="text-gray-800">{vf.onset_duration_severity || "Not stated"}</span>
+                              <span className="font-semibold">
+                                Onset / Duration / Severity:
+                              </span>{" "}
+                              <span className="text-gray-800">
+                                {vf.onset_duration_severity || "Not stated"}
+                              </span>
                             </div>
 
-                            {(assoc.positives?.length || assoc.negatives?.length) && (
+                            {(assoc.positives?.length ||
+                              assoc.negatives?.length) && (
                               <div className="grid sm:grid-cols-2 gap-6">
                                 <div>
-                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Associated ( + )</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Associated ( + )
+                                  </div>
                                   <ul className="list-disc pl-5 space-y-1 text-gray-900">
                                     {(assoc.positives || []).map((s, i) => (
                                       <li key={i}>{s}</li>
                                     ))}
                                   </ul>
                                 </div>
+
                                 <div>
-                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Associated ( − )</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Associated ( − )
+                                  </div>
                                   <ul className="list-disc pl-5 space-y-1 text-gray-900">
                                     {(assoc.negatives || []).map((s, i) => (
                                       <li key={i}>{s}</li>
@@ -662,27 +784,37 @@ export default function DoctorDashboard() {
                               </div>
                             )}
 
-                            {Array.isArray(sum.quick_checks) && sum.quick_checks.length > 0 && (
-                              <div>
-                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Today’s Quick Checks</div>
-                                <ul className="list-disc pl-5 space-y-1 text-gray-900">
-                                  {sum.quick_checks.map((s: string, i: number) => (
-                                    <li key={i}>{s}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                            {Array.isArray(sum.quick_checks) &&
+                              sum.quick_checks.length > 0 && (
+                                <div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Today’s Quick Checks
+                                  </div>
+                                  <ul className="list-disc pl-5 space-y-1 text-gray-900">
+                                    {sum.quick_checks.map(
+                                      (s: string, i: number) => (
+                                        <li key={i}>{s}</li>
+                                      )
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
 
-                            {Array.isArray(sum.next_best_actions) && sum.next_best_actions.length > 0 && (
-                              <div>
-                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Next Best Actions</div>
-                                <ul className="list-disc pl-5 space-y-1 text-gray-900">
-                                  {sum.next_best_actions.map((s: string, i: number) => (
-                                    <li key={i}>{s}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                            {Array.isArray(sum.next_best_actions) &&
+                              sum.next_best_actions.length > 0 && (
+                                <div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Next Best Actions
+                                  </div>
+                                  <ul className="list-disc pl-5 space-y-1 text-gray-900">
+                                    {sum.next_best_actions.map(
+                                      (s: string, i: number) => (
+                                        <li key={i}>{s}</li>
+                                      )
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
                           </>
                         );
                       })()}
@@ -693,18 +825,25 @@ export default function DoctorDashboard() {
                 {tab === "emr" && (
                   <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
                     <div className="px-6 py-4 border-b border-gray-100">
-                      <h3 className="text-base font-bold text-gray-900">EMR Insights</h3>
+                      <h3 className="text-base font-bold text-gray-900">
+                        EMR Insights
+                      </h3>
                       <p className="text-xs text-gray-600 mt-1">
-                        AI-powered insights based on the patient’s EMR and conversation.
+                        AI-powered insights based on the patient’s EMR and
+                        conversation.
                       </p>
                     </div>
+
                     <div className="p-6 space-y-6 text-sm text-gray-900">
                       {(() => {
                         const emr = openReport.emr_tab || {};
                         const rh = emr.relevant_history || {};
 
                         const iconOnlyAsk = (text: string, i: number) => (
-                          <li key={i} className="flex items-start justify-between gap-3">
+                          <li
+                            key={i}
+                            className="flex items-start justify-between gap-3"
+                          >
                             <span className="pr-2">{text}</span>
                             <button
                               className="inline-flex items-center justify-center w-7 h-7 rounded bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -721,7 +860,9 @@ export default function DoctorDashboard() {
                           <>
                             {emr.risk_flags?.length > 0 && (
                               <div>
-                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Risk Flags</div>
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                  Risk Flags
+                                </div>
                                 <ul className="list-disc pl-5 space-y-2">
                                   {emr.risk_flags.map(iconOnlyAsk)}
                                 </ul>
@@ -730,7 +871,9 @@ export default function DoctorDashboard() {
 
                             {emr.trend_insights?.length > 0 && (
                               <div>
-                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Trend Insights</div>
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                  Trend Insights
+                                </div>
                                 <ul className="list-disc pl-5 space-y-2">
                                   {emr.trend_insights.map(iconOnlyAsk)}
                                 </ul>
@@ -739,39 +882,57 @@ export default function DoctorDashboard() {
 
                             {emr.care_gaps?.length > 0 && (
                               <div>
-                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Care Gaps</div>
+                                <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                  Care Gaps
+                                </div>
                                 <ul className="list-disc pl-5 space-y-2">
                                   {emr.care_gaps.map(iconOnlyAsk)}
                                 </ul>
                               </div>
                             )}
 
-                            {(rh.conditions?.length || rh.meds?.length || rh.allergies_alerts?.length) && (
+                            {(rh.conditions?.length ||
+                              rh.meds?.length ||
+                              rh.allergies_alerts?.length) && (
                               <div className="grid sm:grid-cols-3 gap-4 pt-2">
                                 <div>
-                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Conditions</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Conditions
+                                  </div>
                                   <ul className="list-disc pl-5 space-y-1">
-                                    {(rh.conditions || []).map((c: any, i: number) => {
-                                      const t = `${c.name} — ${c.status}`;
-                                      return <li key={i}>{t}</li>;
-                                    })}
+                                    {(rh.conditions || []).map(
+                                      (c: any, i: number) => {
+                                        const t = `${c.name} — ${c.status}`;
+                                        return <li key={i}>{t}</li>;
+                                      }
+                                    )}
                                   </ul>
                                 </div>
+
                                 <div>
-                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Meds (relevant)</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Meds (relevant)
+                                  </div>
                                   <ul className="list-disc pl-5 space-y-1">
-                                    {(rh.meds || []).map((m: any, i: number) => {
-                                      const t = `${m.name} — ${m.purpose}`;
-                                      return <li key={i}>{t}</li>;
-                                    })}
+                                    {(rh.meds || []).map(
+                                      (m: any, i: number) => {
+                                        const t = `${m.name} — ${m.purpose}`;
+                                        return <li key={i}>{t}</li>;
+                                      }
+                                    )}
                                   </ul>
                                 </div>
+
                                 <div>
-                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">Allergies / Alerts</div>
+                                  <div className="text-[12px] uppercase tracking-wide text-gray-600 font-semibold mb-1">
+                                    Allergies / Alerts
+                                  </div>
                                   <ul className="list-disc pl-5 space-y-1">
-                                    {(rh.allergies_alerts || []).map((a: string, i: number) => (
-                                      <li key={i}>{a}</li>
-                                    ))}
+                                    {(rh.allergies_alerts || []).map(
+                                      (a: string, i: number) => (
+                                        <li key={i}>{a}</li>
+                                      )
+                                    )}
                                   </ul>
                                 </div>
                               </div>
@@ -786,12 +947,14 @@ export default function DoctorDashboard() {
                 {tab === "graph" && (
                   <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
                     <div className="px-5 py-4 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-900">Annotated Graph</h3>
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Annotated Graph
+                      </h3>
                     </div>
-                    <div className="p-5 h-[500px]"> {/* fixed height for Cytoscape */}
+
+                    <div className="p-5 h-[500px]">
                       {openReport.annotated_graph ? (
                         <>
-                          {/* Legend */}
                           <div className="mb-4 flex gap-4 flex-wrap">
                             {Object.entries(typeColors).map(([type, color]) => (
                               <div key={type} className="flex items-center gap-2">
@@ -799,19 +962,25 @@ export default function DoctorDashboard() {
                                   className="w-4 h-4 rounded-full"
                                   style={{ backgroundColor: color }}
                                 />
-                                <span className="text-sm capitalize"
-                                  style={{ color: "#000000" }}>{type}</span>
+                                <span
+                                  className="text-sm capitalize"
+                                  style={{ color: "#000000" }}
+                                >
+                                  {type}
+                                </span>
                               </div>
                             ))}
                           </div>
-                          {/* Graph */}
+
                           <KnowledgeGraph
                             nodes={openReport.annotated_graph.nodes || []}
                             edges={openReport.annotated_graph.edges || []}
                           />
                         </>
                       ) : (
-                        <p className="text-sm text-gray-500">No graph provided.</p>
+                        <p className="text-sm text-gray-500">
+                          No graph provided.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -829,7 +998,6 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Evidence drawer */}
           <EvidenceDrawer
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}
@@ -843,5 +1011,19 @@ export default function DoctorDashboard() {
         </>
       )}
     </div>
+  );
+}
+
+export default function DoctorDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <DoctorDashboardContent />
+    </Suspense>
   );
 }
