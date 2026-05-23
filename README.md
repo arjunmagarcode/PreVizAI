@@ -13,9 +13,10 @@
 ---
 
 ## 🔗 Demo Links
-- **Video Walkthrough:** https://drive.google.com/file/d/15cRtbM7ET0M-dQU7wdH1JeWkt4vK_Jxd/view?usp=sharing
-- **Presentation Slides:** https://www.canva.com/design/DAG0PMTlN1M/--Wk7pzBHFquarNAlv8BEA/edit?utm_content=DAG0PMTlN1M&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+## 🔗 Demo Links
 
+- **Video Walkthrough:** [Watch Demo](https://drive.google.com/file/d/15RtbM7FI0M-dU7w0HlJeWkt4VK_Jxd/view?usp=sharing)
+- **Presentation Slides:** [View Slides](https://www.canva.com/design/DAG0PMTlN1M/Wk7pzBHFquarNAlv8BEA/editutm_content=DAG0PMTlN1M&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 ---
 
 ## ✨ Project Vision
